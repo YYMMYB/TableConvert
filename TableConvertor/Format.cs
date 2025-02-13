@@ -53,19 +53,18 @@ public abstract class Format
     // 用于 HList 跳过空项目
     public bool allEmpty;
 
-    // 某个子节点存在输入值, ($end, $default, 之类视作空, 辅助错误检查).
-    // 用于辅助计算 existConflict
-    public bool existInputValue;
-    // 存在某个叶节点, 其处于完成状态, 但是又输入了新值, $开头的 视作空.
-    // 用于辅助计算 allConflictInItemFirstLine.
-    public bool existConflict;
+    public enum Controled
+    {
+        None,
+        Child,
+        Value,
+        Empty,
+    }
 
-    // 所有已完成的子节点的所有范围内输入(不止是叶节点) 存在 $end, (value和其他关键字视为空, 辅助错误检查).
-    public bool existEndKeyword;
-    // 所有已完成的子节点的所有范围内输入(不止是叶节点) 要么是$default, 要么为空.
-    public bool existDefaultKeyword;
 
-    // 警告, 报错所需的信息
+
+    // 被子节点控制的列, 希望接受输入值.
+    public List<bool>? controledColumn;
 
     // 在范围内, 但不属于任何子节点的某个格子, 存在值.
     // 区别于 existInputValue, 这个属性考虑范围内 不属于任何叶节点的 输入,
@@ -74,6 +73,11 @@ public abstract class Format
     // 因为所有可能有值的格子都会访问一次, 而没被访问的就一定不能有值.
     // (但是没被访问的可以有关键字)
     public bool existFreeInputValue;
+
+    // 所有已完成的子节点的所有范围内输入(不止是叶节点) 存在 $end, (value和其他关键字视为空, 辅助错误检查).
+    public bool existEndKeyword;
+    // 所有已完成的子节点的所有范围内输入(不止是叶节点) 要么是$default, 要么为空.
+    public bool existDefaultKeyword;
 
 
 
@@ -115,8 +119,6 @@ public abstract class Format
         }
 
         allEmpty = allEmpty && Children().All((fmt) => { return fmt.allEmpty; });
-        existInputValue = Children().Any((fmt) => { return fmt.existInputValue; });
-        existConflict = Children().Any((fmt) => { return fmt.existConflict; });
 
     }
 
