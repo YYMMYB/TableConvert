@@ -45,13 +45,13 @@ public class CellData
         Value,
     }
 
-    public Kind K;
-    public Value? Val;
+    public Kind k;
+    public Value? val;
 
     public CellData(Kind k, Value? val = null)
     {
-        K = k;
-        Val = val;
+        this.k = k;
+        this.val = val;
     }
 
     public static CellData FromString(string s)
