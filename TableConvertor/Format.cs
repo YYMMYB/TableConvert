@@ -24,16 +24,33 @@ public class Line {
     }
 }
 
-public class Format {
-    public Line line;
+
+public class State {
+    public List<State> children = new();
     public Value? value;
+    public bool finished;
+    public bool collected;
+    public bool valid;
+
+    public State() {
+        value = null;
+        finished = false;
+        collected = false;
+        valid = true;
+    }
+}
+
+public class Format {
     public int size;
 
-    // 跨行状态
-    public bool finished;
+    public Line line;
 
-    // 每行状态
-    public bool valid;
+    // 和 line 一样, 只是个引用, 函数的通用参数.
+    // state真正的存储位置, 会根据实际情况有所不同.
+    // 可能随时变化. 因为 Format 可以重用.
+    // 比如 HFormat 读取列表的时候, 每个新项都会重新设置正确的 state
+    public State state;
+
 
     public void ReadLine(Line line) {
         OnNewLine(line);
@@ -43,7 +60,6 @@ public class Format {
 
     public virtual void OnNewLine(Line line) {
         this.line = line;
-        valid = true;
     }
 
     public virtual void ParseValue(ref int column) { }
@@ -54,7 +70,7 @@ public class Format {
         } else if (column < start + size) {
             for (var c = column; c < start + size; c++) {
                 if (line.cells[c].k == CellData.Kind.Value) {
-                    valid = false;
+                    state.valid = false;
                     break;
                 }
             }
@@ -64,9 +80,7 @@ public class Format {
         } else if (column > start + size) {
             throw new Exception();
         }
-
     }
-
 }
 
 public class OneCell : Format {
@@ -75,16 +89,16 @@ public class OneCell : Format {
     }
     public override void ParseValue(ref int column) {
         base.ParseValue(ref column);
-        if (finished) {
+        if (state.finished) {
             if (this.line.cells[column].k == CellData.Kind.Value) {
-                valid = false;
+                state.valid = false;
             } else {
-                valid = true;
+                state.valid = true;
             }
         } else {
-            this.value = this.line.cells[column].val;
-            finished = true;
-            valid = true;
+            state.value = this.line.cells[column].val;
+            state.finished = true;
+            state.valid = true;
         }
         column += 1;
     }
@@ -94,6 +108,7 @@ public class VTemplate : Format {
 
     public List<HTemplate> templates = new();
     public int cur;
+    public int curState;
     public override void OnNewLine(Line line) {
         base.OnNewLine(line);
         templates[cur].OnNewLine(line);
@@ -102,23 +117,28 @@ public class VTemplate : Format {
     public override void ParseValue(ref int column) {
         base.ParseValue(ref column);
         var start = column;
-        if (!finished) {
+        if (!state.finished) {
             templates[cur].ParseValue(ref column);
-            if (templates[cur].finished) {
+            if (templates[cur].state.finished) {
                 cur += 1;
             }
         }
 
         AlignColumn(start, ref column);
 
+        var newState = new State();
+        state.children[curState].children.Add(newState);
+        templates[cur].state = newState;
+
         if (cur >= templates.Count) {
             // 收集
             var q = from item in templates
-                    select item.value;
-            value = new ListValue(q.ToList());
-            finished = true;
+                    select item.state.value;
+            state.value = new ListValue(q.ToList());
+            state.finished = true;
         }
     }
+
 }
 
 public class HTemplate : Format {
@@ -136,21 +156,21 @@ public class HTemplate : Format {
         base.ParseValue(ref column);
         var start = column;
 
-        finished = true;
-        valid = true;
+        state.finished = true;
+        state.valid = true;
         foreach (var item in items) {
             item.ParseValue(ref column);
-            finished = finished && item.finished;
-            valid = valid && item.valid;
+            state.finished = state.finished && item.state.finished;
+            state.valid = state.valid && item.state.valid;
         }
 
         AlignColumn(start, ref column);
 
-        if (finished) {
+        if (state.finished) {
             // 收集
             var q = from item in items
-                    select item.value;
-            value = new ListValue(q.ToList());
+                    select item.state.value;
+            state.value = new ListValue(q.ToList());
         }
 
     }
@@ -177,16 +197,16 @@ public class Switch : Format {
         base.ParseValue(ref column);
 
         var start = column;
-        if (!gearFormat.finished) {
+        if (!gearFormat.state.finished) {
             gearFormat.ParseValue(ref column);
-            if (!gearFormat.valid) { valid = false; } else {
-                if (gearFormat.finished) {
-                    gear = gearFormat.value;
+            if (!gearFormat.state.valid) { state.valid = false; } else {
+                if (gearFormat.state.finished) {
+                    gear = gearFormat.state.value;
                 }
             }
         }
 
-        if (gearFormat.finished) {
+        if (gearFormat.state.finished) {
             branches[gear].ParseValue(ref column);
         }
 
