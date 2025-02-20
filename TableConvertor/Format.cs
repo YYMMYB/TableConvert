@@ -80,6 +80,11 @@ public class State {
     }
 
     public bool Breackable { get => finished || breakable; }
+
+    public void Clear() {
+
+    }
+
 }
 
 public class Format {
@@ -91,7 +96,7 @@ public class Format {
     // state真正的存储位置, 会根据实际情况有所不同.
     // 可能随时变化. 因为 Format 可以重用.
     // 比如 HFormat 读取列表的时候, 每个新项都会重新设置正确的 state
-    public State state;
+    public required State state;
 
 
     public void ReadLine(Line line) {
@@ -127,6 +132,9 @@ public class Format {
             throw new Exception();
         }
     }
+    public virtual void Collect() { }
+
+    public virtual void ClearState() { }
 
 }
 
@@ -177,33 +185,39 @@ public class VTemplate : Format {
                 state.valid = false;
             }
 
+            state.breakable = state.CurChild.Breackable;
+
             // 收集. 收集后 state 应该就可以释放掉了(或者重新利用)
             // 这里用了隐藏条件, 在竖模板里, 如果最后一个finished, 那么前面的一定都finished了
             if (templates.Count <= state.cur && state.CurChild.finished) {
-                var res = new List<Value>();
-                foreach (var chState in state.children) {
-                    if (!chState.valid) {
-                        throw new Exception();
-                    }
-                    if (!chState.finished) {
-                        throw new Exception();
-                    }
-                    if (chState.collected) {
-                        throw new Exception();
-                    }
-                    chState.collected = true;
-                    res.Add(chState.value);
-                }
-                var q = from item in state.children
-                        select item.value;
-                state.value = new ListValue(res);
-                state.finished = true;
+                Collect();
             }
 
-            state.breakable = state.CurChild.Breackable;
         }
 
         AlignColumn(start, ref column);
+    }
+
+    public override void Collect() {
+        base.Collect();
+        var res = new List<Value>();
+        foreach (var chState in state.children) {
+            if (!chState.valid) {
+                throw new Exception();
+            }
+            if (!chState.finished) {
+                throw new Exception();
+            }
+            if (chState.collected) {
+                throw new Exception();
+            }
+            chState.collected = true;
+            res.Add(chState.value);
+        }
+        var q = from item in state.children
+                select item.value;
+        state.value = new ListValue(res);
+        state.finished = true;
     }
 }
 
@@ -222,12 +236,7 @@ public class VList : Format {
             if (state.CurChild.Breackable) {
                 itemFormat.ParseValue(ref column);
                 if (!state.CurChild.valid) {
-                    if (state.value == null) {
-                        state.value = new ListValue(new List<Value>());
-                    }
-                    var list = (state.value as ListValue).list;
-                    list.Add(state.CurChild.value);
-
+                    CollectItem();
                 }
 
             } else {
@@ -241,10 +250,17 @@ public class VList : Format {
         } else {
 
         }
-
-
-
         AlignColumn(start, ref column);
+    }
+
+    public  void CollectItem() {
+        base.Collect();
+        if (state.value == null) {
+            state.value = new ListValue(new List<Value>());
+        }
+        var list = (state.value as ListValue).list;
+        itemFormat.Collect();
+        list.Add(state.CurChild.value);
     }
 }
 
