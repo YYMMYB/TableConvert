@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -26,18 +27,59 @@ public class Line {
 
 
 public class State {
-    public List<State> children = new();
+    public List<State?> children = new();
     public Value? value;
     public bool finished;
     public bool collected;
     public bool valid;
+    public bool breakable;
+
+    // 有多个子节点的会使用 (H,VTemplate,H,VList)
+    public int cur;
 
     public State() {
         value = null;
         finished = false;
+        breakable = false;
         collected = false;
         valid = true;
+
+        cur = 0;
     }
+
+    public State Clone() {
+        var clone = new State();
+        clone.value = value;
+        clone.finished = finished;
+        clone.collected = collected;
+        clone.valid = valid;
+        clone.breakable = breakable;
+        clone.cur = cur;
+
+        clone.children = new();
+        foreach (var child in children) {
+            if (child.collected) {
+                clone.children.Add(null);
+            }
+            clone.children.Add(child.Clone());
+        }
+        return clone;
+    }
+
+    public State CurChild { get { return children[cur]; } }
+
+    public void NewChild() {
+        children.Add(new State());
+    }
+
+    public void Next() {
+        cur++;
+        if (cur == children.Count) {
+            NewChild();
+        }
+    }
+
+    public bool Breackable { get => finished || breakable; }
 }
 
 public class Format {
@@ -62,7 +104,11 @@ public class Format {
         this.line = line;
     }
 
-    public virtual void ParseValue(ref int column) { }
+    public virtual void ParseValue(ref int column) {
+        if (!state.valid) {
+            throw new Exception();
+        }
+    }
 
     public virtual void AlignColumn(int start, ref int column) {
         if (column < start) {
@@ -81,6 +127,7 @@ public class Format {
             throw new Exception();
         }
     }
+
 }
 
 public class OneCell : Format {
@@ -99,6 +146,7 @@ public class OneCell : Format {
             state.value = this.line.cells[column].val;
             state.finished = true;
             state.valid = true;
+            state.breakable = true;
         }
         column += 1;
     }
@@ -106,39 +154,98 @@ public class OneCell : Format {
 
 public class VTemplate : Format {
 
-    public List<HTemplate> templates = new();
-    public int cur;
-    public int curState;
+    public List<Format> templates = new();
+
+    public Format CurTemplate { get => templates[state.cur]; }
+
     public override void OnNewLine(Line line) {
         base.OnNewLine(line);
-        templates[cur].OnNewLine(line);
+        templates[state.cur].OnNewLine(line);
     }
 
     public override void ParseValue(ref int column) {
         base.ParseValue(ref column);
         var start = column;
+
         if (!state.finished) {
-            templates[cur].ParseValue(ref column);
-            if (templates[cur].state.finished) {
-                cur += 1;
+            if (state.CurChild.finished) {
+                state.Next();
+                CurTemplate.state = state.CurChild;
             }
+            CurTemplate.ParseValue(ref column);
+            if (!state.CurChild.valid) {
+                state.valid = false;
+            }
+
+            // 收集. 收集后 state 应该就可以释放掉了(或者重新利用)
+            // 这里用了隐藏条件, 在竖模板里, 如果最后一个finished, 那么前面的一定都finished了
+            if (templates.Count <= state.cur && state.CurChild.finished) {
+                var res = new List<Value>();
+                foreach (var chState in state.children) {
+                    if (!chState.valid) {
+                        throw new Exception();
+                    }
+                    if (!chState.finished) {
+                        throw new Exception();
+                    }
+                    if (chState.collected) {
+                        throw new Exception();
+                    }
+                    chState.collected = true;
+                    res.Add(chState.value);
+                }
+                var q = from item in state.children
+                        select item.value;
+                state.value = new ListValue(res);
+                state.finished = true;
+            }
+
+            state.breakable = state.CurChild.Breackable;
         }
 
         AlignColumn(start, ref column);
+    }
+}
 
-        var newState = new State();
-        state.children[curState].children.Add(newState);
-        templates[cur].state = newState;
-
-        if (cur >= templates.Count) {
-            // 收集
-            var q = from item in templates
-                    select item.state.value;
-            state.value = new ListValue(q.ToList());
-            state.finished = true;
-        }
+public class VList : Format {
+    public required Format itemFormat;
+    public override void OnNewLine(Line line) {
+        base.OnNewLine(line);
+        itemFormat.OnNewLine(line);
     }
 
+    public override void ParseValue(ref int column) {
+        base.ParseValue(ref column);
+        var start = column;
+
+        if (!state.finished) {
+            if (state.CurChild.Breackable) {
+                itemFormat.ParseValue(ref column);
+                if (!state.CurChild.valid) {
+                    if (state.value == null) {
+                        state.value = new ListValue(new List<Value>());
+                    }
+                    var list = (state.value as ListValue).list;
+                    list.Add(state.CurChild.value);
+
+                }
+
+            } else {
+                itemFormat.ParseValue(ref column);
+                if (!state.CurChild.valid) {
+                    state.valid = false;
+                }
+            }
+
+            state.breakable = state.CurChild.Breackable;
+        } else {
+
+        }
+
+
+
+        AlignColumn(start, ref column);
+    }
 }
 
 public class HTemplate : Format {

@@ -16,7 +16,7 @@ public class LiteralValue : Value
 
 public class ListValue : Value
 {
-    List<Value> list;
+    public List<Value> list;
     public ListValue(List<Value> list)
     {
         this.list = list;
