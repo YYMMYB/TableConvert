@@ -25,68 +25,6 @@ public class Line {
     }
 }
 
-
-public class State {
-    public List<State?> children = new();
-    public Value? value;
-    public bool finished;
-    public bool collected;
-    public bool valid;
-    public bool breakable;
-
-    // 有多个子节点的会使用 (H,VTemplate,H,VList)
-    public int cur;
-
-    public State() {
-        value = null;
-        finished = false;
-        breakable = false;
-        collected = false;
-        valid = true;
-
-        cur = 0;
-    }
-
-    public State Clone() {
-        var clone = new State();
-        clone.value = value;
-        clone.finished = finished;
-        clone.collected = collected;
-        clone.valid = valid;
-        clone.breakable = breakable;
-        clone.cur = cur;
-
-        clone.children = new();
-        foreach (var child in children) {
-            if (child.collected) {
-                clone.children.Add(null);
-            }
-            clone.children.Add(child.Clone());
-        }
-        return clone;
-    }
-
-    public State CurChild { get { return children[cur]; } }
-
-    public void NewChild() {
-        children.Add(new State());
-    }
-
-    public void Next() {
-        cur++;
-        if (cur == children.Count) {
-            NewChild();
-        }
-    }
-
-    public bool Breackable { get => finished || breakable; }
-
-    public void Clear() {
-
-    }
-
-}
-
 public class Format {
     public int size;
 
@@ -162,13 +100,14 @@ public class OneCell : Format {
 
 public class VTemplate : Format {
 
-    public List<Format> templates = new();
+    public List<Format> children = new();
 
-    public Format CurTemplate { get => templates[state.cur]; }
+    public Format CurTemplate { get => children[state.curFormat]; }
+
 
     public override void OnNewLine(Line line) {
         base.OnNewLine(line);
-        templates[state.cur].OnNewLine(line);
+        children[state.cur].OnNewLine(line);
     }
 
     public override void ParseValue(ref int column) {
@@ -189,7 +128,7 @@ public class VTemplate : Format {
 
             // 收集. 收集后 state 应该就可以释放掉了(或者重新利用)
             // 这里用了隐藏条件, 在竖模板里, 如果最后一个finished, 那么前面的一定都finished了
-            if (templates.Count <= state.cur && state.CurChild.finished) {
+            if (children.Count <= state.cur && state.CurChild.finished) {
                 Collect();
             }
 

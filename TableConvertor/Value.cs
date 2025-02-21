@@ -25,7 +25,7 @@ public class ListValue : Value
 
 public class MapValue : Value
 {
-    List<(Value, Value)> map;
+    public List<(Value, Value)> map;
     public MapValue(List<(Value, Value)> map)
     {
         this.map = map;
