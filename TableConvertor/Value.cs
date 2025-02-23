@@ -72,8 +72,6 @@ public class CellData
         // 注释 或 空白
         Ignore,
         End,
-        Default,
-        Placeholder,
         Value,
     }
 
@@ -95,8 +93,6 @@ public class CellData
                 res = new CellData(Kind.Ignore); break;
             case "$end":
                 res = new CellData(Kind.End); break;
-            case "$default":
-                res = new CellData(Kind.Default); break;
             default:
                 res = new CellData(Kind.Value, new LiteralValue(s));
                 break;

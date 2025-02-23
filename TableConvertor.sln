@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35806.99 d17.13
+VisualStudioVersion = 17.13.35806.99
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TableConvertor", "TableConvertor\TableConvertor.csproj", "{FE0846D1-4D1A-46E6-9277-A1D68A3B89F1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{BA6A269B-E425-407A-B169-34DD50E6BAEE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{FE0846D1-4D1A-46E6-9277-A1D68A3B89F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FE0846D1-4D1A-46E6-9277-A1D68A3B89F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FE0846D1-4D1A-46E6-9277-A1D68A3B89F1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA6A269B-E425-407A-B169-34DD50E6BAEE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA6A269B-E425-407A-B169-34DD50E6BAEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA6A269B-E425-407A-B169-34DD50E6BAEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA6A269B-E425-407A-B169-34DD50E6BAEE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
