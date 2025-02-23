@@ -1,4 +1,7 @@
 using System.Collections.Generic;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace TableConvertor;
 
@@ -9,6 +12,15 @@ public class Value
     }
     public virtual int Count { get { return 0; } }
     public virtual void Truncate(int end) { }
+
+    public virtual JsonNode ToJson() {
+        return null;
+    }
+
+    public override string ToString() {
+        var s = JsonSerializer.Serialize(ToJson());
+        return s;
+    }
 }
 
 public class LiteralValue : Value
@@ -21,6 +33,11 @@ public class LiteralValue : Value
     }
     public override Value Clone() {
         return new LiteralValue(lit);
+    }
+
+
+    public override JsonNode ToJson() {
+        return JsonValue.Create(lit);
     }
 }
 
@@ -42,6 +59,22 @@ public class ListValue : Value
     public override void Truncate(int end) {
         list.RemoveRange(end, list.Count);
     }
+
+
+
+    public override JsonNode ToJson() {
+        var arr = new JsonNode[list.Count];
+        var i = 0;
+        foreach(var ch in list) {
+            var v = ch.ToJson();
+            arr[i] = v;
+            i++;
+        }
+        var j = new JsonArray(arr);
+        return j;
+    }
+
+
 }
 
 public class MapValue : Value
@@ -62,6 +95,7 @@ public class MapValue : Value
     public override void Truncate(int end) {
         map.RemoveRange(end, map.Count);
     }
+
 }
 
 
@@ -98,6 +132,10 @@ public class CellData
                 break;
         }
         return res;
+    }
+
+    public override string ToString() {
+        return $"{k} {val}";
     }
 }
 

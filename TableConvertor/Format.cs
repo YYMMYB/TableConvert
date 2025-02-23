@@ -19,6 +19,11 @@ public class Line {
     public CellData[] cells;
     public int start;
 
+    public Line(int width) {
+        cells = new CellData[width];
+        start = 0;
+    }
+
     public Line(Line line) {
         cells = line.cells;
     }
@@ -26,16 +31,23 @@ public class Line {
     public Line(CellData[] cells, int start) {
         this.cells = cells;
     }
+
+
+    public override string ToString() {
+        return $"{start}: {cells}";
+    }
+
 }
 
+
 public class Format {
-    public int size;
     // HVList 为 true
     // HVTuple 为 false
     public virtual bool ResetChildren { get => true; }
+    public int size;
 
     public Format? template;
-    public List<Format>? children;
+    public List<Format>? children = new();
     public int curChildIndex;
     public Format CurChild {
         get {
@@ -58,7 +70,7 @@ public class Format {
         Finished,
         EndParent,
     }
-    public State state;
+    public State state = State.Start;
     public bool Breakable {
         get =>
             state == State.Breakable
@@ -120,12 +132,16 @@ public class Format {
             if (ResetChildren) {
                 children = new List<Format>();
             }
+            foreach (var ch in children) {
+                ch.Reset();
+            }
             curChildIndex = 0;
         } else {
             curChildIndex = -1;
         }
 
-        history = null;
+
+        //history = history;
     }
 
     public virtual void ForceFinish() {
@@ -168,7 +184,7 @@ public class Format {
         }
     }
     public void DropHistroy() {
-        history = null;
+        history = history.history;
     }
 
     public void ReadLine(Line line) {
@@ -177,16 +193,21 @@ public class Format {
 
     public virtual void ParseValue(Line line) {
         if (Finished) {
-            ParseFinished(line);
+            var end = line.start + size;
+            ParseFinished(line, end);
         }
     }
 
     public virtual void ParseOptionValue(Line line) {
+        var start = line.start;
+        var fromState = state;
         ParseValue(line);
         if (!Valid) {
-            if (state == State.Start) {
+            if (fromState == State.Start) {
                 Reset();
-                ParseIgnore(line);
+                line.start = start;
+                var end = line.start + size;
+                ParseIgnore(line, end);
                 if (Valid) {
                     Empty = true;
                     Trans(State.Finished);
@@ -195,8 +216,8 @@ public class Format {
         }
     }
 
-    public void ParseFinished(Line line) {
-        for (; line.start < line.start + size; line.start++) {
+    public void ParseFinished(Line line, int end) {
+        for (; line.start < end; line.start++) {
             switch (line.cells[line.start].k) {
                 case CellData.Kind.Value:
                     Trans(State.Invalid);
@@ -208,11 +229,11 @@ public class Format {
                     break;
             }
         }
-        line.start += size;
+        line.start = end;
     }
 
-    public void ParseIgnore(Line line) {
-        for (; line.start < line.start + size; line.start++) {
+    public void ParseIgnore(Line line, int end) {
+        for (; line.start < end; line.start++) {
             switch (line.cells[line.start].k) {
                 case CellData.Kind.Value:
                 case CellData.Kind.End:
@@ -223,7 +244,8 @@ public class Format {
                     break;
             }
         }
-        line.start += size;
+        line.start = end;
+        Console.WriteLine($"{line.start}");
     }
 
     public void HorizontalFormatUnfinishedStateTransition() {
@@ -275,10 +297,30 @@ public class Format {
         }
     }
 
+
+
+    public virtual Value RawCollect() {
+        if (children != null) {
+            var ls = new List<Value>();
+            foreach (var ch in children) {
+                ls.Add(ch.RawCollect());
+            }
+            return new ListValue(ls);
+        } else {
+            var c = this as OneCell;
+            return c.value ?? new LiteralValue("");
+        }
+
+    }
 }
 
 public class OneCell : Format {
     public Value? value;
+
+    public OneCell() {
+        children = null;
+        size = 1;
+    }
 
     public override Format Clone() {
         var res = new OneCell();
@@ -288,7 +330,7 @@ public class OneCell : Format {
 
     public override void ClonedBy(Format origin) {
         base.ClonedBy(origin);
-        value = (origin as OneCell).value.Clone();
+        value = (origin as OneCell).value?.Clone();
     }
 
     public override void Reset() {
@@ -299,6 +341,8 @@ public class OneCell : Format {
     public override void ParseValue(Line line) {
         base.ParseValue(line);
         if (!Valid) return;
+
+        var end = line.start + size;
 
         if (!Finished) {
             var cell = line.cells[line.start];
@@ -313,7 +357,7 @@ public class OneCell : Format {
                     break;
             }
             line.start += 1;
-            ParseIgnore(line);
+            ParseIgnore(line, end);
             if (!Valid) return;
 
             Trans(State.Finished);
@@ -335,15 +379,17 @@ public class HList : Format {
         base.ParseValue(line);
         if (!Valid) return;
 
+
         if (!Finished) {
+            var end = line.start + size;
             if (template == null || children == null) {
                 throw new Exception();
             }
             curChildIndex = 0;
             while (line.start + template.size <= size) {
                 if (state == State.Start) {
-                    var ch = template.Clone();
                     if (curChildIndex == children.Count) {
+                        var ch = template.Clone();
                         children.Add(ch);
                     } else {
                         throw new Exception();
@@ -358,8 +404,17 @@ public class HList : Format {
                 curChildIndex++;
             }
 
-            ParseIgnore(line);
+            ParseIgnore(line, end);
             if (!Valid) { return; }
+
+            var allEmpty = true;
+            foreach (var ch in children) {
+                if (!ch.Empty) {
+                    allEmpty = false;
+                    break;
+                }
+            }
+            if (allEmpty) Empty = true;
 
             HorizontalFormatUnfinishedStateTransition();
             if (!Valid) { return; }
@@ -368,11 +423,19 @@ public class HList : Format {
 }
 
 public class VList : Format {
+    public override Format Clone() {
+        var res = new VList();
+        res.ClonedBy(this);
+        return res;
+    }
+
     public override void ParseValue(Line line) {
         base.ParseValue(line);
         if (!Valid) return;
 
         if (!Finished) {
+            var end = line.start + size;
+
             if (state == State.Start) {
                 children.Add(template.Clone());
                 curChildIndex = 0;
@@ -386,11 +449,20 @@ public class VList : Format {
                     Empty = true;
                     Trans(State.Finished); return;
                 }
-                // 后面逻辑 和 Need状态 一样
+
+                // 复制的后面 Must 的逻辑
+                if (!CurChild.Breakable) {
+                    Trans(State.MustInputValue);
+                } else {
+                    Trans(State.Breakable);
+                }
+
+                return;
             } else if (Breakable) {
                 var vld = false;
                 var forceFinish = false;
                 CurChild.Save();
+                var start = line.start;
                 CurChild.ParseValue(line);
                 if (CurChild.Valid) {
                     vld = true;
@@ -416,6 +488,7 @@ public class VList : Format {
                     return;
                 } else {
                     CurChild.Restore();
+                    line.start = start;
                     CurChild.ForceFinish();
                     if (!CurChild.Valid) {
                         Trans(State.Invalid); return;
@@ -424,11 +497,11 @@ public class VList : Format {
                     children.Add(template.Clone());
                     curChildIndex += 1;
 
-                    // 后面逻辑 和 Need状态 一样
+                    // 后面逻辑 和 Must 一样
                 }
             }
 
-            // 这里是 Need 的逻辑, 但是 Start 和 Breakable 是通用的, 所以没写if
+            // 这里是 Must 的逻辑, 但是 Start 和 Breakable 是通用的, 所以没写if
 
             CurChild.ParseValue(line);
             if (!CurChild.Valid) {
@@ -448,11 +521,19 @@ public class VList : Format {
 public class HTuple : Format {
     public override bool ResetChildren => false;
 
+    public override Format Clone() {
+        var res = new HTuple();
+        res.ClonedBy(this);
+        return res;
+    }
+
     public override void ParseValue(Line line) {
         base.ParseValue(line);
         if (!Valid) return;
 
         if (!Finished) {
+            var end = line.start + size;
+
             curChildIndex = 0;
             while (curChildIndex < children.Count) {
                 CurChild.ParseValue(line);
@@ -464,7 +545,7 @@ public class HTuple : Format {
                 curChildIndex++;
             }
 
-            ParseIgnore(line);
+            ParseIgnore(line, end);
             if (!Valid) { return; }
 
             HorizontalFormatUnfinishedStateTransition();
@@ -475,6 +556,12 @@ public class HTuple : Format {
 
 public class VTuple : Format {
     public override bool ResetChildren => false;
+
+    public override Format Clone() {
+        var res = new VTuple();
+        res.ClonedBy(this);
+        return res;
+    }
 
     public override void ParseValue(Line line) {
         base.ParseValue(line);
@@ -505,3 +592,13 @@ public class VTuple : Format {
         }
     }
 }
+
+//public class Switch: Format {
+//    public override bool ResetChildren => false;
+
+//    public override void ParseValue(Line line) {
+//        base.ParseValue(line);
+//        if (!Valid) return;
+
+//    }
+//}
