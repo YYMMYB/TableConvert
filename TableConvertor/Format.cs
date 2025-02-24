@@ -301,7 +301,7 @@ public class Format {
 
     public virtual Value RawCollect() {
         if (children != null) {
-            var ls = new List<Value>();
+            var ls = new ItemEqList<Value>();
             foreach (var ch in children) {
                 ls.Add(ch.RawCollect());
             }
@@ -330,7 +330,7 @@ public class OneCell : Format {
 
     public override void ClonedBy(Format origin) {
         base.ClonedBy(origin);
-        value = (origin as OneCell).value?.Clone();
+        value = (origin as OneCell).value;
     }
 
     public override void Reset() {
@@ -593,12 +593,34 @@ public class VTuple : Format {
     }
 }
 
-//public class Switch: Format {
-//    public override bool ResetChildren => false;
+public class Switch : Format {
+    public override bool ResetChildren => false;
 
-//    public override void ParseValue(Line line) {
-//        base.ParseValue(line);
-//        if (!Valid) return;
+    public List<Value> lookup = new ();
 
-//    }
-//}
+    public override Format Clone() {
+        var res = new Switch();
+        res.ClonedBy(this);
+        return res;
+    }
+
+    public override void ClonedBy(Format origin) {
+        base.ClonedBy(origin);
+        lookup = (origin as Switch).lookup;
+    }
+
+    public override void ParseValue(Line line) {
+        base.ParseValue(line);
+        if (!Valid) return;
+
+        if (!Finished) {
+            var end = line.start + size;
+
+            template.ParseValue(line);
+
+            if (template.Breakable) {
+
+            }
+        }
+    }
+}

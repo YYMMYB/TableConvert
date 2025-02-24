@@ -1,5 +1,6 @@
 using CsvHelper;
 using CsvHelper.Configuration;
+using Shouldly;
 using System.Globalization;
 using TableConvertor;
 
@@ -101,4 +102,31 @@ public class Tests {
     public void Test2() {
         TestFile(t2, "Test2.csv");
     }
+
+    [Test]
+    public void TestValueEq() {
+        Value v1 = new ListValue([
+            new LiteralValue("a"),
+            new LiteralValue("a"),
+            new LiteralValue("a"),
+            ]);
+
+        ListValue v2 = new ListValue([
+            new LiteralValue("a"),
+            new LiteralValue("a"),
+            new LiteralValue("a"),
+            ]);
+
+        ItemEqList<int> l1 = [1, 2, 3];
+        ItemEqList<int> l2 = [1, 2, 3];
+
+        Console.WriteLine(l1.Equals(l2));
+        Console.WriteLine(l1 == l2);
+
+
+        Console.WriteLine(v1.Equals(v2));
+        Console.WriteLine(v1 == v2);
+        //v1.ShouldBe(v2);
+    }
+
 }
