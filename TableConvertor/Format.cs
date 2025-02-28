@@ -31,6 +31,7 @@ public class Line {
 
     public Line(string[] cells, int start) {
         this.cells = cells;
+        this.start = start;
     }
 
 
@@ -70,7 +71,7 @@ public interface Parser {
 }
 
 public class OneCell : Parser {
-    string value;
+    public string value;
     Func<string, bool> predicate;
 
     State _st;
@@ -97,7 +98,9 @@ public class OneCell : Parser {
         switch (St) {
             case State.Incomplete:
                 var v = line.cells[line.start];
-                if (!predicate(v)) return false;
+                if (!predicate(v)) {
+                    return false;
+                }
                 value = v;
                 line.start++;
                 _st = State.Finished;
@@ -124,6 +127,8 @@ public class VComb : Parser {
     public State St => _st;
 
     public int ignoreTail;
+
+    private VComb() { }
 
     public VComb(params Parser[] parsers) {
         var ignoreTail = 0;
@@ -181,10 +186,12 @@ public class VComb : Parser {
                     if (IsLast) {
                         return false;
                     } else {
+                        var cache = Cur;
                         curIndex += 1;
                         if (TryParse(line)) {
-                            Cur.TryFinish();
+                            cache.TryFinish();
                             //UpdateState();
+                            return true;
                         } else {
                             curIndex -= 1;
                             return false;
@@ -211,7 +218,7 @@ public class VComb : Parser {
             newCh[i] = parsers[i].NewReset();
         }
         var res = new VComb();
-        res.Init(parsers, this.ignoreTail);
+        res.Init(newCh, this.ignoreTail);
         return res;
     }
 
@@ -242,14 +249,16 @@ public class VList : Parser {
     public List<Parser> parsers = new();
     public int upLimit;
 
-    public bool IsLast => parsers.Count >= upLimit - 1;
+    public bool IsLast => (upLimit >= 0) && (parsers.Count >= upLimit - 1);
 
     State _st = State.Breakable;
-    public State St => throw new NotImplementedException();
+    public State St => _st;
 
     public VList(Parser template, int upLimit = -1) {
-        UpdateState();
+        this.template = template;
         this.upLimit = upLimit;
+        //UpdateState();
+        _st = State.Breakable;
     }
 
     void UpdateState() {
@@ -344,7 +353,8 @@ public class VList : Parser {
 
     public Parser NewReset() {
         var newT = template.NewReset();
-        return new VList(newT);
+        return new VList(newT, upLimit);
     }
+
 }
 
