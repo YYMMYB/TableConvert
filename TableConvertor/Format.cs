@@ -42,6 +42,11 @@ public class Line {
 
 public enum State {
     Incomplete,
+    // 调用 TryFinish 并且必须成功, 返回 true.
+    // 该状态调用 TryParse 返回 false 时, 一般就代表了结束,
+    // 这时一般就需要外部调用 TryFinish.
+    // 没有自动调用, 是因为要保证 任何返回 false 的Try函数, 都不改变任何状态(即对象和调用前相同).
+    // 我用了这个条件, 所以还是任何时候都保证比较好, 否则担心出bug.
     Breakable,
     Finished,
 }
@@ -102,7 +107,7 @@ public class OneCell : Parser {
     }
 
     public bool TryFinish() {
-        return St== State.Finished;
+        return St == State.Finished;
     }
 }
 
@@ -175,28 +180,25 @@ public class VComb : Parser {
                 } else {
                     if (IsLast) {
                         return false;
-                    } else if (FollowEmptyTail) { 
-                        
                     } else {
-                        if (Next.TryParse(line) && Next.TryNextLine()) {
-                            if (Cur.TryFinish()) {
-                                curIndex += 1;
-                                UpdateState();
-                                return true;
-                            } else {
-                                // Cur.TryFinish 必须成功
-                                // 因为这是 Cur 处于 Breakable 状态的要求
-                                throw new Exception();
-                            }
+                        curIndex += 1;
+                        if (TryParse(line)) {
+                            Cur.TryFinish();
+                            //UpdateState();
+                        } else {
+                            curIndex -= 1;
+                            return false;
                         }
                     }
                 }
                 break;
             case State.Finished:
                 curIndex++;
-                if (Cur.TryParse(line) && Cur.TryNextLine()) {
-                    UpdateState();
+                if (TryParse(line)) {
                     return true;
+                } else {
+                    curIndex--;
+                    return false;
                 }
                 break;
         }
@@ -238,23 +240,34 @@ public class VComb : Parser {
 public class VList : Parser {
     public Parser template;
     public List<Parser> parsers = new();
+    public int upLimit;
+
+    public bool IsLast => parsers.Count >= upLimit - 1;
 
     State _st = State.Breakable;
     public State St => throw new NotImplementedException();
 
-    public VList(Parser template) {
+    public VList(Parser template, int upLimit = -1) {
         UpdateState();
+        this.upLimit = upLimit;
     }
 
     void UpdateState() {
         if (template.St == State.Finished) {
-            _st = State.Breakable;
+            if (IsLast) {
+                _st = State.Finished;
+            } else {
+                _st = State.Breakable;
+            }
         } else {
             _st = template.St;
         }
     }
 
     void PushTemplate() {
+        if (IsLast) {
+            throw new Exception();
+        }
         parsers.Add(template);
         template = template.NewReset();
     }
@@ -277,8 +290,12 @@ public class VList : Parser {
                 if (template.TryParse(line) && template.TryNextLine()) {
                     UpdateState();
                     return true;
+                } else if (IsLast) {
+                    return false;
                 } else {
                     PushTemplate();
+                    // 这里没有递归调用, 防止 template 可空时(即初始状态是Breakable), 出现无限递归.
+                    // 并且由于每项都一样, 所以再检测一次就够了.
                     if (template.TryParse(line) && template.TryNextLine()) {
                         UpdateState();
                         if (parsers.Last().TryFinish()) {
@@ -294,11 +311,12 @@ public class VList : Parser {
                 break;
             case State.Finished:
                 PushTemplate();
-                if (template.TryParse(line) && template.TryNextLine()) {
-                    UpdateState();
+                // 这里不会无限递归, 要求初始状态永远不能是 Finish
+                if (TryParse(line)) {
                     return true;
                 } else {
                     PopTemplate();
+                    return false;
                 }
                 break;
         }
@@ -329,3 +347,4 @@ public class VList : Parser {
         return new VList(newT);
     }
 }
+

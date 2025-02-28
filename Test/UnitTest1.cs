@@ -31,8 +31,9 @@ public class Tests {
         var parse = new VList(
             new VComb(
                 new VList(new OneCell(IsValue)),
-                new OneCell(IsEnd)
-                ));
+                new VList(new OneCell(IsEnd), 1)
+                )
+            );
     }
 
     [Test]
