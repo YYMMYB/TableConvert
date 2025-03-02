@@ -190,7 +190,6 @@ public class VComb : Parser {
                         curIndex += 1;
                         if (TryParse(line)) {
                             cache.TryFinish();
-                            //UpdateState();
                             return true;
                         } else {
                             curIndex -= 1;
@@ -247,16 +246,16 @@ public class VComb : Parser {
 public class VList : Parser {
     public Parser template;
     public List<Parser> parsers = new();
-    public int upLimit;
+    public int maxLen;
 
-    public bool IsLast => (upLimit >= 0) && (parsers.Count >= upLimit - 1);
+    public bool IsLast => (maxLen >= 0) && (parsers.Count >= maxLen - 1);
 
     State _st = State.Breakable;
     public State St => _st;
 
     public VList(Parser template, int upLimit = -1) {
         this.template = template;
-        this.upLimit = upLimit;
+        this.maxLen = upLimit;
         //UpdateState();
         _st = State.Breakable;
     }
@@ -304,7 +303,7 @@ public class VList : Parser {
                 } else {
                     PushTemplate();
                     // 这里没有递归调用, 防止 template 可空时(即初始状态是Breakable), 出现无限递归.
-                    // 并且由于每项都一样, 所以再检测一次就够了.
+                    // 并且由于每项都一样, 所以再检测一次就够了(因此在有maxLen的时候, 这样也是对的).
                     if (template.TryParse(line) && template.TryNextLine()) {
                         UpdateState();
                         if (parsers.Last().TryFinish()) {
@@ -353,8 +352,35 @@ public class VList : Parser {
 
     public Parser NewReset() {
         var newT = template.NewReset();
-        return new VList(newT, upLimit);
+        return new VList(newT, maxLen);
     }
 
+}
+
+
+public class HComb : Parser {
+
+    State _st;
+    public State St => _st;
+
+    public Parser NewReset() {
+        throw new NotImplementedException();
+    }
+
+    public Value? TryCollect() {
+        throw new NotImplementedException();
+    }
+
+    public bool TryFinish() {
+        throw new NotImplementedException();
+    }
+
+    public bool TryNextLine() {
+        throw new NotImplementedException();
+    }
+
+    public bool TryParse(Line line) {
+        throw new NotImplementedException();
+    }
 }
 
