@@ -11,376 +11,151 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using TableConvertor;
 
 
 namespace TableConvertor;
 
-
-public class Line {
-    public string[] cells;
-    public int start;
-
-    public Line(int width) {
-        cells = new string[width];
-        start = 0;
-    }
-
-    public Line(Line line) {
-        cells = line.cells;
-    }
-
-    public Line(string[] cells, int start) {
-        this.cells = cells;
-        this.start = start;
-    }
-
-
-    public override string ToString() {
-        return $"{start}: {cells}";
-    }
-
+public record class Token {
+    public string content;
 }
 
-public enum State {
-    Incomplete,
-    // 调用 TryFinish 并且必须成功, 返回 true.
-    // 该状态调用 TryParse 返回 false 时, 一般就代表了结束,
-    // 这时一般就需要外部调用 TryFinish.
-    // 没有自动调用, 是因为要保证 任何返回 false 的Try函数, 都不改变任何状态(即对象和调用前相同).
-    // 我用了这个条件, 所以还是任何时候都保证比较好, 否则担心出bug.
-    Breakable,
-    Finished,
+public interface IInput<Tk> {
+    Finished Finished { get; }
+    Tk Peer(int n);
+    void Advance(int n);
 }
 
-public enum Flow {
-    Next,
-    Ok,
-    Invalid,
+public abstract class Input : IInput<Token>, IHistory {
+    public abstract Finished Finished { get; }
+    public abstract void Advance(int n);
+    public abstract Token Peer(int n);
+
+
+    public abstract IHistoryState CaulculateHistoryState();
+    public abstract void RestoreHistoryState(IHistoryState state);
 }
 
-public interface Parser {
-    bool TryParse(Line line);
-    bool TryNextLine();
-    bool TryFinish();
 
-    Value? TryCollect();
-
-    Parser NewReset();
-
-    State St { get; }
+public interface IParser {
+    Finished Finished { get; }
+    bool Parse(Input input);
+    IParser CloneNew();
 }
 
-public class OneCell : Parser {
-    public string value;
-    Func<string, bool> predicate;
+public abstract class Parser : IParser, IHistory {
+    protected Finished _finished;
+    public Finished Finished { get => _finished; }
+    public abstract bool Parse(Input input);
+    public abstract IParser CloneNew();
+    public abstract void CloneFrom(IParser origin);
 
-    State _st;
-    public State St => _st;
+    // 历史记录功能具体实现.
+    public IHistoryState? history;
+    public abstract IHistoryState CaulculateHistoryState();
+    public abstract void RestoreHistoryState(IHistoryState state);
 
-    public OneCell(Func<string, bool> predicate) {
-        this.predicate = predicate;
-        _st = State.Incomplete;
+    // 历史记录功能的使用.
+    public void SaveToHistory() {
+        history = CaulculateHistoryState();
     }
-
-    public Parser NewReset() {
-        return new OneCell(predicate);
-    }
-
-    public Value? TryCollect() {
-        throw new NotImplementedException();
-    }
-
-    public bool TryNextLine() {
-        return St == State.Finished;
-    }
-
-    public bool TryParse(Line line) {
-        switch (St) {
-            case State.Incomplete:
-                var v = line.cells[line.start];
-                if (!predicate(v)) {
-                    return false;
-                }
-                value = v;
-                line.start++;
-                _st = State.Finished;
-                return true;
+    public void RestoreHistory() {
+        if (history != null) {
+            RestoreHistoryState(history);
         }
-        return false;
     }
-
-    public bool TryFinish() {
-        return St == State.Finished;
+    public void DropHistory() {
+        history = history?.PrevHistoryState();
     }
 }
 
-public class VComb : Parser {
-
-    public Parser[] parsers;
-    public int curIndex = 0;
-    public Parser Cur { get => parsers[curIndex]; }
-    public Parser Next { get => parsers[curIndex + 1]; }
-    bool IsLast { get => curIndex == parsers.Length - 1; }
-    bool FollowEmptyTail { get => curIndex >= parsers.Length + ignoreTail - 1; }
-
-    State _st;
-    public State St => _st;
-
-    public int ignoreTail;
-
-    private VComb() { }
-
-    public VComb(params Parser[] parsers) {
-        var ignoreTail = 0;
-        for (; parsers.Length + ignoreTail > 0; ignoreTail--) {
-            var idx = parsers.Length + ignoreTail - 1;
-            if (parsers[idx].St == State.Breakable || parsers[idx].St == State.Finished) {
-                continue;
-            } else {
-                break;
-            }
-        }
-
-        Init(parsers, ignoreTail);
-    }
-
-    void Init(Parser[] parsers, int ignoreTail) {
-        if (parsers.Length == 0) {
-            throw new Exception();
-        }
-        this.parsers = parsers;
-        this.ignoreTail = ignoreTail;
-        UpdateState();
-    }
-
-    void UpdateState() {
-        if (IsLast) {
-            _st = Cur.St;
-        } else if (FollowEmptyTail) {
-            if (Cur.St == State.Incomplete) {
-                _st = State.Incomplete;
-            } else {
-                _st = State.Breakable;
-            }
-        } else {
-            _st = State.Incomplete;
-        }
-    }
-
-    public bool TryParse(Line line) {
-        if (St == State.Finished) {
-            return false;
-        }
-        switch (Cur.St) {
-            case State.Incomplete:
-                if (Cur.TryParse(line) && Cur.TryNextLine()) {
-                    UpdateState();
-                    return true;
-                }
-                break;
-            case State.Breakable:
-                if (Cur.TryParse(line) && Cur.TryNextLine()) {
-                    UpdateState();
-                    return true;
-                } else {
-                    if (IsLast) {
-                        return false;
-                    } else {
-                        var cache = Cur;
-                        curIndex += 1;
-                        if (TryParse(line)) {
-                            cache.TryFinish();
-                            return true;
-                        } else {
-                            curIndex -= 1;
-                            return false;
-                        }
-                    }
-                }
-                break;
-            case State.Finished:
-                curIndex++;
-                if (TryParse(line)) {
-                    return true;
-                } else {
-                    curIndex--;
-                    return false;
-                }
-                break;
-        }
-        return false;
-    }
-
-    public Parser NewReset() {
-        var newCh = new Parser[parsers.Length];
-        for (int i = 0; i < parsers.Length; i++) {
-            newCh[i] = parsers[i].NewReset();
-        }
-        var res = new VComb();
-        res.Init(newCh, this.ignoreTail);
-        return res;
-    }
-
-
-    public Value? TryCollect() {
-        throw new NotImplementedException();
-    }
-
-    public bool TryFinish() {
-        if (St != State.Breakable) {
-            return false;
-        }
-        if (Cur.TryFinish()) {
-            _st = State.Finished;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public bool TryNextLine() {
-        return true;
-    }
+public interface IHistoryState {
+    IHistoryState? PrevHistoryState();
 }
 
-public class VList : Parser {
+public interface IHistory {
+    IHistoryState CaulculateHistoryState();
+    void RestoreHistoryState(IHistoryState state);
+}
+
+public record struct Finished {
+    private int _id;
+    public static Finished Incomplete = new Finished { _id = 0 };
+    public static Finished Line = new Finished { _id = 1 };
+    public static Finished All = new Finished { _id = 2 };
+
+    public bool IsIncomplete() => _id == 0;
+    public bool LineIsFinished() => _id >= 1;
+    public bool AllFinished() => _id == 2;
+}
+
+public class HRepeat : Parser {
+
     public Parser template;
-    public List<Parser> parsers = new();
-    public int maxLen;
+    public List<Parser> children = [];
+    public int curIdx;
+    public Parser Cur { get => children[curIdx]; }
 
-    public bool IsLast => (maxLen >= 0) && (parsers.Count >= maxLen - 1);
-
-    State _st = State.Breakable;
-    public State St => _st;
-
-    public VList(Parser template, int upLimit = -1) {
-        this.template = template;
-        this.maxLen = upLimit;
-        //UpdateState();
-        _st = State.Breakable;
-    }
-
-    void UpdateState() {
-        if (template.St == State.Finished) {
-            if (IsLast) {
-                _st = State.Finished;
-            } else {
-                _st = State.Breakable;
-            }
-        } else {
-            _st = template.St;
-        }
-    }
-
-    void PushTemplate() {
-        if (IsLast) {
-            throw new Exception();
-        }
-        parsers.Add(template);
-        template = template.NewReset();
-    }
-    void PopTemplate() {
-        template = parsers.Last();
-        parsers.RemoveAt(parsers.Count - 1);
-    }
-
-    public bool TryParse(Line line) {
-        if (St == State.Finished) return false;
-
-        switch (template.St) {
-            case State.Incomplete:
-                if (template.TryParse(line) && template.TryNextLine()) {
-                    UpdateState();
-                    return true;
-                }
-                break;
-            case State.Breakable:
-                if (template.TryParse(line) && template.TryNextLine()) {
-                    UpdateState();
-                    return true;
-                } else if (IsLast) {
-                    return false;
-                } else {
-                    PushTemplate();
-                    // 这里没有递归调用, 防止 template 可空时(即初始状态是Breakable), 出现无限递归.
-                    // 并且由于每项都一样, 所以再检测一次就够了(因此在有maxLen的时候, 这样也是对的).
-                    if (template.TryParse(line) && template.TryNextLine()) {
-                        UpdateState();
-                        if (parsers.Last().TryFinish()) {
-                            return true;
-                        } else {
-                            // 原因同 VComb 的这种情况
-                            throw new Exception();
-                        }
-                    } else {
-                        PopTemplate();
-                    }
-                }
-                break;
-            case State.Finished:
-                PushTemplate();
-                // 这里不会无限递归, 要求初始状态永远不能是 Finish
-                if (TryParse(line)) {
-                    return true;
-                } else {
-                    PopTemplate();
-                    return false;
-                }
-                break;
-        }
-        return false;
-    }
-
-    public Value? TryCollect() {
-        throw new NotImplementedException();
-    }
-
-    public bool TryFinish() {
-        if (St != State.Breakable) return false;
-
-        if (template.TryFinish()) {
-            PushTemplate();
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public bool TryNextLine() {
+    bool IncreaseIndex() {
+        curIdx++;
         return true;
     }
 
-    public Parser NewReset() {
-        var newT = template.NewReset();
-        return new VList(newT, maxLen);
+    void ResetIndex() {
+        curIdx = 0;
     }
 
+    void Update() {
+
+    }
+
+    public override bool Parse(Input input) {
+        if (Finished.AllFinished()) {
+            return false;
+        }
+
+        while (input.Finished.IsIncomplete()) {
+            if (Cur.Finished.LineIsFinished()) {
+                if (!IncreaseIndex()) {
+                    throw new Exception();
+                }
+            }
+            if (!Cur.Parse(input)) {
+                return false;
+            }
+            Update();
+            if (Finished.LineIsFinished()) {
+                break;
+            }
+        }
+
+        return true;
+
+    }
+
+    public override IHistoryState CaulculateHistoryState() {
+        throw new NotImplementedException();
+    }
+
+
+    public override void RestoreHistoryState(IHistoryState state) {
+        throw new NotImplementedException();
+    }
+
+    public override IParser CloneNew() {
+        throw new NotImplementedException();
+    }
+
+    public override void CloneFrom(IParser origin) {
+        throw new NotImplementedException();
+    }
 }
 
-
-public class HComb : Parser {
-
-    State _st;
-    public State St => _st;
-
-    public Parser NewReset() {
-        throw new NotImplementedException();
+public class HRepeatState : IHistoryState {
+    public IHistoryState? prevHistory;
+    public IHistoryState? PrevHistoryState() {
+        return prevHistory;
     }
 
-    public Value? TryCollect() {
-        throw new NotImplementedException();
-    }
-
-    public bool TryFinish() {
-        throw new NotImplementedException();
-    }
-
-    public bool TryNextLine() {
-        throw new NotImplementedException();
-    }
-
-    public bool TryParse(Line line) {
-        throw new NotImplementedException();
-    }
+    public List<IHistoryState> childrenState = [];
 }
-
