@@ -37,47 +37,50 @@ public class Tests {
         return cell.StartsWith("2");
     }
 
-    void ParseFile(string file, Parser parser) {
+    void ParseFile(string file, Format parser) {
         using (var reader = new StreamReader(Path.Join(PROJ_DIR, file)))
         using (var csv = new CsvReader(reader, config)) {
+            List<string[]> table = [];
+            int colCount = -1;
             while (csv.Read()) {
-                var list = new string[csv.ColumnCount];
-                for (int i = 0; i < csv.ColumnCount; i++) {
+                colCount = csv.ColumnCount;
+                var list = new string[colCount];
+                for (int i = 0; i < colCount; i++) {
                     list[i] = csv.GetField(i);
                 }
-                var line = new Line(list, 0);
-                var suc = parser.TryParse(line);
+                table.Add(list);
                 //Console.WriteLine($"{suc}");
             }
+            Console.WriteLine(colCount);
+            string[,] tableArr = new string[table.Count, colCount];
+            for (int i = 0; i < table.Count; i++) {
+                for (int j = 0; j < colCount; j++) {
+                    tableArr[i, j] = table[i][j];
+                }
+            }
+            parser.SetParam(new InitParam { table = tableArr, startColumn = 0 });
+            parser.Read(0, tableArr.GetLength(0));
         }
     }
-
     [Test]
-    public void Test_有End() {
-        var parser = new VList(
-            new VComb(
-                new VList(new OneCell(IsValue)),
-                new VList(new OneCell(IsEnd), 1)
-                )
-            );
-
-        ParseFile("a2.csv", parser);
-    }
-
-    [Test]
-    public void Test_无End() {
-        var parser = new VList(
-            new VComb(
-                new OneCell(Is1),
-                new OneCell(Is2)
-                )
-            );
-        ParseFile("a3.csv", parser);
-        foreach (var ch in parser.parsers) {
-            var v1 = ((ch as VComb).parsers[0] as OneCell).value;
-            var v2 = ((ch as VComb).parsers[1] as OneCell).value;
-            Console.WriteLine($"{v1},{v2}");
-        }
+    public void Test() {
+        var parser = new ListFormat(
+            new HFormat(
+                new SingleFormat(),
+                new ListFormat(
+                    new SingleFormat()
+                    ),
+                new SingleFormat(),
+                new SingleFormat(),
+                new SwitchFormat(new Dictionary<string, Format> {
+                    ["x"] = new ListFormat(new SingleFormat()),
+                    ["y"] = new HFormat(new SingleFormat(), new SingleFormat())
+                })
+            )
+        );
+        ParseFile("b1.csv", parser);
+        var json = parser.value.ToJson();
+        Console.WriteLine(json);
     }
 
     [Test]

@@ -8,16 +8,21 @@ public static class CellUtil {
     }
 }
 
+public record struct InitParam {
+    public string[,] table;
+    public int startColumn;
+}
+
 public class Format {
     public string[,] table;
-    public int[] colRange;
+    public int[] colRange = [-1, -1];
     public int StartCol => colRange[0];
     public int EndCol => colRange[1];
     public Value? value;
 
     public virtual bool ExistSingleRow { get => false; }
     public virtual bool AllEmpty(int row) {
-        for (var c = StartCol; c <= EndCol; c++) {
+        for (var c = StartCol; c < EndCol; c++) {
             if (!CellUtil.IsEmpty(table[row, c])) {
                 return false;
             }
@@ -29,13 +34,19 @@ public class Format {
         throw new NotImplementedException();
     }
 
-    public virtual void Read(int startRow, int endRow) {
-
+    public virtual void SetParam(InitParam param) {
+        this.colRange[0] = param.startColumn;
+        this.table = param.table;
     }
 
     public virtual void Reset() {
         value = null;
     }
+
+    public virtual void Read(int startRow, int endRow) {
+
+    }
+
 }
 
 public class SingleFormat : Format {
@@ -43,6 +54,11 @@ public class SingleFormat : Format {
 
     public override IEnumerable<int> SingleCol() {
         yield return StartCol;
+    }
+
+    public override void SetParam(InitParam param) {
+        base.SetParam(param);
+        colRange = [param.startColumn, param.startColumn + 1];
     }
 
     public override void Read(int startRow, int endRow) {
@@ -59,24 +75,49 @@ public class SwitchFormat : Format {
     public Dictionary<string, Format> cases = new();
     public Format CurFormat => cases[curCase];
 
+    public SwitchFormat(Dictionary<string, Format> cases) : base() {
+        this.cases = cases;
+    }
+
     public override IEnumerable<int> SingleCol() {
         yield return StartCol;
     }
 
+    public override void SetParam(InitParam param) {
+        base.SetParam(param);
+        param.startColumn += 1;
+        var end = param.startColumn;
+        foreach (var ch in cases.Values) {
+            ch.SetParam(param);
+            if (ch.EndCol > end) {
+                end = ch.EndCol;
+            }
+        }
+        colRange[1] = end;
+    }
+
     public override void Reset() {
         base.Reset();
+        curCase = null;
         foreach (var c in cases.Values) {
             c.Reset();
         }
     }
 
-    override public void Read(int startRow, int endRow) {
+    public override void Read(int startRow, int endRow) {
+        Debug.Assert(curCase == null);
         curCase = table[startRow, StartCol];
         CurFormat.Read(startRow, endRow);
+        value = new ListValue([new LiteralValue(curCase), CurFormat.value]);
     }
 }
 
 public class HFormat : Format {
+
+    public HFormat(params List<Format> children) : base() {
+        this.children = children;
+    }
+
     public override bool ExistSingleRow {
         get {
             foreach (var ch in children) {
@@ -88,7 +129,7 @@ public class HFormat : Format {
         }
     }
 
-    public Format[] children;
+    public List<Format> children;
 
     public override IEnumerable<int> SingleCol() {
         foreach (var c in children) {
@@ -97,6 +138,16 @@ public class HFormat : Format {
             }
         }
     }
+
+    public override void SetParam(InitParam param) {
+        base.SetParam(param);
+        foreach (var ch in children) {
+            ch.SetParam(param);
+            param.startColumn = ch.EndCol;
+        }
+        colRange[1] = children.Last().EndCol;
+    }
+
     public override void Reset() {
         base.Reset();
         foreach (var c in children) {
@@ -108,8 +159,8 @@ public class HFormat : Format {
         foreach (var c in children) {
             c.Read(startRow, endRow);
             listValue.Add(c.value);
-            c.Reset();
         }
+        value = listValue;
     }
 }
 
@@ -118,8 +169,18 @@ public class ListFormat : Format {
 
     public Format template;
 
+    public ListFormat(Format template) : base() {
+        this.template = template;
+    }
+
     public override IEnumerable<int> SingleCol() {
         yield break;
+    }
+
+    public override void SetParam(InitParam param) {
+        base.SetParam(param);
+        template.SetParam(param);
+        colRange = template.colRange;
     }
 
     public override void Reset() {
@@ -129,10 +190,11 @@ public class ListFormat : Format {
 
     public override void Read(int startRow, int endRow) {
         Debug.Assert(value == null);
+        var listValue = new ListValue();
         if (template.AllEmpty(startRow)) {
+            value = listValue;
             return;
         }
-        var listValue = new ListValue();
         if (!template.ExistSingleRow) {
             throw new Exception();
         }
