@@ -2,6 +2,7 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using Shouldly;
 using System.Globalization;
+using System.Text.Json.Nodes;
 using TableConvertor;
 
 namespace Test;
@@ -37,7 +38,7 @@ public class Tests {
         return cell.StartsWith("2");
     }
 
-    void ParseFile(string file, Format parser) {
+    void ParseDataFile(string file, Format format) {
         using (var reader = new StreamReader(Path.Join(PROJ_DIR, file)))
         using (var csv = new CsvReader(reader, config)) {
             List<string[]> table = [];
@@ -58,13 +59,15 @@ public class Tests {
                     tableArr[i, j] = table[i][j];
                 }
             }
-            parser.SetParam(new InitParam { table = tableArr, startColumn = 0 });
-            parser.Read(0, tableArr.GetLength(0));
+            format.SetParam(new InitParam { table = tableArr, startColumn = 0 });
+            format.Read(0, tableArr.GetLength(0));
         }
     }
+
     [Test]
-    public void Test() {
-        var parser = new ListFormat(
+    public void TestFormatData() {
+        var fileName = "b1";
+        var format = new ListFormat(
             new HFormat(
                 new SingleFormat(),
                 new ListFormat(
@@ -75,12 +78,95 @@ public class Tests {
                 new SwitchFormat(new Dictionary<string, Format> {
                     ["x"] = new ListFormat(new SingleFormat()),
                     ["y"] = new HFormat(new SingleFormat(), new SingleFormat())
-                })
+                }),
+                new ListFormat(
+                    new HFormat(
+                        new SingleFormat(),
+                        new ListFormat(new SingleFormat())
+                    )
+                )
             )
         );
-        ParseFile("b1.csv", parser);
-        var json = parser.value.ToJson();
-        Console.WriteLine(json);
+        ParseDataFile(fileName + ".csv", format);
+        var json = format.value.ToJson();
+        using (var writer = new StreamWriter(Path.Join(PROJ_DIR, fileName + ".json"))) {
+            writer.Write(json);
+        }
+        var res = """
+[
+  [
+    "a1",
+    [
+      "b1",
+      "bb1",
+      "bbb1"
+    ],
+    "c1",
+    "d1",
+    [
+      "x",
+      [
+        "x1",
+        "xx1"
+      ]
+    ],
+    [
+      [
+        "_",
+        [
+          "l1",
+          "l2"
+        ]
+      ],
+      [
+        "_",
+        [
+          "l1"
+        ]
+      ]
+    ]
+  ],
+  [
+    "a2",
+    [
+      "b2",
+      "bb2",
+      "bbb2"
+    ],
+    "c2",
+    "d2",
+    [
+      "y",
+      [
+        "y1",
+        "yy1"
+      ]
+    ],
+    [
+      [
+        "_",
+        [
+          "l1",
+          "l2"
+        ]
+      ],
+      [
+        "_",
+        [
+          "l1"
+        ]
+      ],
+      [
+        "_",
+        [
+          "l1"
+        ]
+      ]
+    ]
+  ]
+]
+""";
+        json.ToString().ShouldBe(res);
     }
 
     [Test]
