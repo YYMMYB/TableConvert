@@ -1,161 +1,162 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Data.Common;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Runtime.ConstrainedExecution;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using TableConvertor;
-
 
 namespace TableConvertor;
 
-public record class Token {
-    public string content;
-}
-
-public interface IInput<Tk> {
-    Finished Finished { get; }
-    Tk Peer(int n);
-    void Advance(int n);
-}
-
-public abstract class Input : IInput<Token>, IHistory {
-    public abstract Finished Finished { get; }
-    public abstract void Advance(int n);
-    public abstract Token Peer(int n);
-
-
-    public abstract IHistoryState CaulculateHistoryState();
-    public abstract void RestoreHistoryState(IHistoryState state);
-}
-
-
-public interface IParser {
-    Finished Finished { get; }
-    bool Parse(Input input);
-    IParser CloneNew();
-}
-
-public abstract class Parser : IParser, IHistory {
-    protected Finished _finished;
-    public Finished Finished { get => _finished; }
-    public abstract bool Parse(Input input);
-    public abstract IParser CloneNew();
-    public abstract void CloneFrom(IParser origin);
-
-    // 历史记录功能具体实现.
-    public IHistoryState? history;
-    public abstract IHistoryState CaulculateHistoryState();
-    public abstract void RestoreHistoryState(IHistoryState state);
-
-    // 历史记录功能的使用.
-    public void SaveToHistory() {
-        history = CaulculateHistoryState();
-    }
-    public void RestoreHistory() {
-        if (history != null) {
-            RestoreHistoryState(history);
-        }
-    }
-    public void DropHistory() {
-        history = history?.PrevHistoryState();
+public static class CellUtil {
+    public static bool IsEmpty(string cell) {
+        return cell == null || cell.Length == 0;
     }
 }
 
-public interface IHistoryState {
-    IHistoryState? PrevHistoryState();
-}
+public class Format {
+    public string[,] table;
+    public int[] colRange;
+    public int StartCol => colRange[0];
+    public int EndCol => colRange[1];
+    public Value? value;
 
-public interface IHistory {
-    IHistoryState CaulculateHistoryState();
-    void RestoreHistoryState(IHistoryState state);
-}
-
-public record struct Finished {
-    private int _id;
-    public static Finished Incomplete = new Finished { _id = 0 };
-    public static Finished Line = new Finished { _id = 1 };
-    public static Finished All = new Finished { _id = 2 };
-
-    public bool IsIncomplete() => _id == 0;
-    public bool LineIsFinished() => _id >= 1;
-    public bool AllFinished() => _id == 2;
-}
-
-public class HRepeat : Parser {
-
-    public Parser template;
-    public List<Parser> children = [];
-    public int curIdx;
-    public Parser Cur { get => children[curIdx]; }
-
-    bool IncreaseIndex() {
-        curIdx++;
-        return true;
-    }
-
-    void ResetIndex() {
-        curIdx = 0;
-    }
-
-    void Update() {
-
-    }
-
-    public override bool Parse(Input input) {
-        if (Finished.AllFinished()) {
-            return false;
-        }
-
-        while (input.Finished.IsIncomplete()) {
-            if (Cur.Finished.LineIsFinished()) {
-                if (!IncreaseIndex()) {
-                    throw new Exception();
-                }
-            }
-            if (!Cur.Parse(input)) {
+    public virtual bool ExistSingleRow { get => false; }
+    public virtual bool AllEmpty(int row) {
+        for (var c = StartCol; c <= EndCol; c++) {
+            if (!CellUtil.IsEmpty(table[row, c])) {
                 return false;
             }
-            Update();
-            if (Finished.LineIsFinished()) {
-                break;
-            }
         }
-
         return true;
-
     }
 
-    public override IHistoryState CaulculateHistoryState() {
+    public virtual IEnumerable<int> SingleCol() {
         throw new NotImplementedException();
     }
 
+    public virtual void Read(int startRow, int endRow) {
 
-    public override void RestoreHistoryState(IHistoryState state) {
-        throw new NotImplementedException();
     }
 
-    public override IParser CloneNew() {
-        throw new NotImplementedException();
-    }
-
-    public override void CloneFrom(IParser origin) {
-        throw new NotImplementedException();
+    public virtual void Reset() {
+        value = null;
     }
 }
 
-public class HRepeatState : IHistoryState {
-    public IHistoryState? prevHistory;
-    public IHistoryState? PrevHistoryState() {
-        return prevHistory;
+public class SingleFormat : Format {
+    public override bool ExistSingleRow => true;
+
+    public override IEnumerable<int> SingleCol() {
+        yield return StartCol;
     }
 
-    public List<IHistoryState> childrenState = [];
+    public override void Read(int startRow, int endRow) {
+        Debug.Assert(value == null);
+        value = new LiteralValue(table[startRow, StartCol]);
+    }
+
+}
+
+public class SwitchFormat : Format {
+    public override bool ExistSingleRow => true;
+
+    public string? curCase;
+    public Dictionary<string, Format> cases = new();
+    public Format CurFormat => cases[curCase];
+
+    public override IEnumerable<int> SingleCol() {
+        yield return StartCol;
+    }
+
+    public override void Reset() {
+        base.Reset();
+        foreach (var c in cases.Values) {
+            c.Reset();
+        }
+    }
+
+    override public void Read(int startRow, int endRow) {
+        curCase = table[startRow, StartCol];
+        CurFormat.Read(startRow, endRow);
+    }
+}
+
+public class HFormat : Format {
+    public override bool ExistSingleRow {
+        get {
+            foreach (var ch in children) {
+                if (ch.ExistSingleRow) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    public Format[] children;
+
+    public override IEnumerable<int> SingleCol() {
+        foreach (var c in children) {
+            foreach (var col in c.SingleCol()) {
+                yield return col;
+            }
+        }
+    }
+    public override void Reset() {
+        base.Reset();
+        foreach (var c in children) {
+            c.Reset();
+        }
+    }
+    public override void Read(int startRow, int endRow) {
+        var listValue = new ListValue();
+        foreach (var c in children) {
+            c.Read(startRow, endRow);
+            listValue.Add(c.value);
+            c.Reset();
+        }
+    }
+}
+
+public class ListFormat : Format {
+    public override bool ExistSingleRow => false;
+
+    public Format template;
+
+    public override IEnumerable<int> SingleCol() {
+        yield break;
+    }
+
+    public override void Reset() {
+        base.Reset();
+        template.Reset();
+    }
+
+    public override void Read(int startRow, int endRow) {
+        Debug.Assert(value == null);
+        if (template.AllEmpty(startRow)) {
+            return;
+        }
+        var listValue = new ListValue();
+        if (!template.ExistSingleRow) {
+            throw new Exception();
+        }
+        var start = startRow;
+        do {
+            var end = NextRow(start, endRow);
+            template.Read(start, end);
+            listValue.Add(template.value);
+            template.Reset();
+            start = end;
+        }
+        while (start < endRow);
+        value = listValue;
+    }
+
+
+    public int NextRow(int startRow, int endRow) {
+        for (int row = startRow + 1; row < endRow; row++) {
+            foreach (var col in template.SingleCol()) {
+                if (!CellUtil.IsEmpty(table[row, col])) {
+                    return row;
+                }
+            }
+        }
+        return endRow;
+    }
 }

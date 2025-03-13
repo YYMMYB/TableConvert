@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 
 namespace TableConvertor;
 
-public record class Value {
+public record class Value  {
     //public virtual Value Clone() {
     //    return new Value();
     //}
@@ -21,6 +21,7 @@ public record class Value {
         var s = JsonSerializer.Serialize(ToJson());
         return s;
     }
+
 }
 
 public record class LiteralValue : Value {
@@ -42,10 +43,14 @@ public record class LiteralValue : Value {
 }
 
 public record class ListValue : Value {
-    public ItemEqList<Value> list;
+    public List<Value> list = new();
     public override int Count => list.Count;
-    public ListValue(ItemEqList<Value> list) {
+    public ListValue() { }
+    public ListValue(List<Value> list) {
         this.list = list;
+    }
+    public void Add(Value v) {
+        list.Add(v);
     }
     //public override Value Clone() {
     //    var ls = new List<Value>();
@@ -132,6 +137,10 @@ public class CellData {
 
 public class ItemEqList<T> : List<T>, IEquatable<ItemEqList<T>>
     where T : IEquatable<T> {
+
+    public ItemEqList() : base() { }
+    public ItemEqList(IEnumerable<T> collection) : base(collection) { }
+    public ItemEqList(int capacity) : base(capacity) { }
 
     public override bool Equals(object? obj) {
         return base.Equals(obj);
