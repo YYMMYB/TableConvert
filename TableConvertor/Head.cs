@@ -16,7 +16,7 @@ public record class HeadNode {
     public string name;
     public string? type;
     public string? typeName;
-    public Dictionary<string, string> attrs = new();
+    public Dictionary<string, List<string>> attrs = new();
 
     public HeadNode parent;
     public List<HeadNode> children = new();
@@ -37,19 +37,21 @@ public record class HeadNode {
             var attr = HeadParser.TryAttr(cell2);
             if (attr != null) {
                 var s = attr.Split(' ', 2, StringSplitOptions.TrimEntries);
-                attrs[s[0]] = s[1];
+                attrs.TryAdd(s[0], new List<string>());
+                attrs[s[0]].Add(s[1]);
             } else {
                 break;
             }
             startRow2 = end;
         }
-
+        var startCol2 = StartCol;
         if (isVarient) {
-            var startCol2 = NextCol(startRow, StartCol, EndCol);
+            startRow2 = startRow;
+            startCol2 = NextCol(startRow, StartCol, EndCol);
         }
 
         if (startRow2 < endRow) {
-            ParseChildren(startRow2, StartCol, endRow, EndCol);
+            ParseChildren(startRow2, startCol2, endRow, EndCol);
         }
     }
 
@@ -82,7 +84,7 @@ public record class HeadNode {
                         break;
                     }
                 }
-                var node = new HeadNode(table, [startCol2, endRow2]);
+                var node = new HeadNode(table, [startCol2, endCol]);
                 node.parent = this;
                 children.Add(node);
                 node.Read(startRow2, endRow2);
