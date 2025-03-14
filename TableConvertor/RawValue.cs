@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 
 namespace TableConvertor;
 
-public record class Value  {
+public record class RawValue  {
     //public virtual Value Clone() {
     //    return new Value();
     //}
@@ -24,10 +24,10 @@ public record class Value  {
 
 }
 
-public record class LiteralValue : Value {
+public record class LiteralRawValue : RawValue {
     string lit;
 
-    public LiteralValue(string lit) {
+    public LiteralRawValue(string lit) {
         this.lit = lit;
     }
     //public override Value Clone() {
@@ -42,14 +42,14 @@ public record class LiteralValue : Value {
 
 }
 
-public record class ListValue : Value {
-    public List<Value> list = new();
+public record class ListRawValue : RawValue {
+    public List<RawValue> list = new();
     public override int Count => list.Count;
-    public ListValue() { }
-    public ListValue(List<Value> list) {
+    public ListRawValue() { }
+    public ListRawValue(List<RawValue> list) {
         this.list = list;
     }
-    public void Add(Value v) {
+    public void Add(RawValue v) {
         list.Add(v);
     }
     //public override Value Clone() {
@@ -78,62 +78,6 @@ public record class ListValue : Value {
 
 
 }
-
-public record class MapValue : Value {
-    public ItemEqList<(Value, Value)> map;
-    public override int Count => map.Count;
-    public MapValue(ItemEqList<(Value, Value)> map) {
-        this.map = map;
-    }
-    //public override Value Clone() {
-    //    var ls = new List<(Value, Value)> ();
-    //    foreach (var (k, v) in map) {
-    //        ls.Add((k.Clone(), v.Clone()));
-    //    }
-    //    return new MapValue(ls);
-    //}
-    public override void Truncate(int end) {
-        map.RemoveRange(end, map.Count);
-    }
-}
-
-
-public class CellData {
-    public enum Kind {
-        // 注释 或 空白
-        Ignore,
-        End,
-        Value,
-    }
-
-    public Kind k;
-    public Value? val;
-
-    public CellData(Kind k, Value? val = null) {
-        this.k = k;
-        this.val = val;
-    }
-
-    public static CellData FromString(string s) {
-        CellData res;
-        switch (s) {
-            case "":
-                res = new CellData(Kind.Ignore); break;
-            case "$end":
-                res = new CellData(Kind.End); break;
-            default:
-                res = new CellData(Kind.Value, new LiteralValue(s));
-                break;
-        }
-        return res;
-    }
-
-    public override string ToString() {
-        return $"{k} {val}";
-    }
-}
-
-
 
 public class ItemEqList<T> : List<T>, IEquatable<ItemEqList<T>>
     where T : IEquatable<T> {

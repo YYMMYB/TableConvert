@@ -8,17 +8,14 @@ public static class CellUtil {
     }
 }
 
-public record struct InitParam {
-    public string[,] table;
-    public int startColumn;
-}
+
 
 public class Format {
     public string[,] table;
     public int[] colRange = [-1, -1];
     public int StartCol => colRange[0];
     public int EndCol => colRange[1];
-    public Value? value;
+    public RawValue? value;
 
     public virtual bool ExistSingleRow { get => false; }
     public virtual bool AllEmpty(int row) {
@@ -33,7 +30,10 @@ public class Format {
     public virtual IEnumerable<int> SingleCol() {
         throw new NotImplementedException();
     }
-
+    public record struct InitParam {
+        public string[,] table;
+        public int startColumn;
+    }
     public virtual void SetParam(InitParam param) {
         this.colRange[0] = param.startColumn;
         this.table = param.table;
@@ -63,7 +63,7 @@ public class SingleFormat : Format {
 
     public override void Read(int startRow, int endRow) {
         Debug.Assert(value == null);
-        value = new LiteralValue(table[startRow, StartCol]);
+        value = new LiteralRawValue(table[startRow, StartCol]);
     }
 
 }
@@ -108,7 +108,7 @@ public class SwitchFormat : Format {
         Debug.Assert(curCase == null);
         curCase = table[startRow, StartCol];
         CurFormat.Read(startRow, endRow);
-        value = new ListValue([new LiteralValue(curCase), CurFormat.value]);
+        value = new ListRawValue([new LiteralRawValue(curCase), CurFormat.value]);
     }
 }
 
@@ -155,7 +155,7 @@ public class HFormat : Format {
         }
     }
     public override void Read(int startRow, int endRow) {
-        var listValue = new ListValue();
+        var listValue = new ListRawValue();
         foreach (var c in children) {
             c.Read(startRow, endRow);
             listValue.Add(c.value);
@@ -190,7 +190,7 @@ public class ListFormat : Format {
 
     public override void Read(int startRow, int endRow) {
         Debug.Assert(value == null);
-        var listValue = new ListValue();
+        var listValue = new ListRawValue();
         if (template.AllEmpty(startRow)) {
             value = listValue;
             return;

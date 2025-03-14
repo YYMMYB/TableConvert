@@ -59,7 +59,7 @@ public class Tests {
                     tableArr[i, j] = table[i][j];
                 }
             }
-            format.SetParam(new InitParam { table = tableArr, startColumn = 0 });
+            format.SetParam(new Format.InitParam { table = tableArr, startColumn = 0 });
             format.Read(0, tableArr.GetLength(0));
         }
     }
@@ -169,18 +169,68 @@ public class Tests {
         json.ToString().ShouldBe(res);
     }
 
+    public HeadNode ParseHead(string file, int startRow, int endRow) {
+        HeadNode head;
+        using (var reader = new StreamReader(Path.Join(PROJ_DIR, file)))
+        using (var csv = new CsvReader(reader, config)) {
+            List<string[]> table = [];
+            int colCount = -1;
+            while (csv.Read()) {
+                colCount = csv.ColumnCount;
+                var list = new string[colCount];
+                for (int i = 0; i < colCount; i++) {
+                    list[i] = csv.GetField(i);
+                }
+                table.Add(list);
+                //Console.WriteLine($"{suc}");
+            }
+            Console.WriteLine(colCount);
+            string[,] tableArr = new string[table.Count, colCount];
+            for (int i = 0; i < table.Count; i++) {
+                for (int j = 0; j < colCount; j++) {
+                    tableArr[i, j] = table[i][j];
+                }
+            }
+
+            head = new HeadNode(tableArr, [0, colCount]);
+
+            head.Read(startRow, endRow);
+        }
+        return head;
+    }
+
+    public void ShowHead(HeadNode head, int level) {
+        Console.WriteLine($"{level} {head.isVarient} {head.name}");
+        var i = 0;
+        var vh = "h";
+        foreach (var child in head.children) {
+            if (i == head.hChildrenCount) {
+                vh = "v";
+            }
+            ShowHead(child, level + 1);
+            i++;
+        }
+    }
+
+    [Test]
+    public void TestHead() {
+        var fileName = "h1";
+        var head = ParseHead(fileName + ".csv", 0, 7);
+        ShowHead(head,0);
+    }
+
     [Test]
     public void TestValueEq() {
-        Value v1 = new ListValue([
-            new LiteralValue("a"),
-            new LiteralValue("a"),
-            new LiteralValue("a"),
+        RawValue v1 = new ListRawValue([
+            new LiteralRawValue("a"),
+            new LiteralRawValue("a"),
+            new LiteralRawValue("a"),
             ]);
 
-        ListValue v2 = new ListValue([
-            new LiteralValue("a"),
-            new LiteralValue("a"),
-            new LiteralValue("a"),
+        ListRawValue v2 = new ListRawValue([
+            new LiteralRawValue("a"),
+            new LiteralRawValue("a"),
+            new LiteralRawValue("a"),
             ]);
 
         ItemEqList<int> l1 = [1, 2, 3];
