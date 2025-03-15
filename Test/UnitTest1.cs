@@ -59,7 +59,7 @@ public class Tests {
                     tableArr[i, j] = table[i][j];
                 }
             }
-            format.SetParam(new Format.InitParam { table = tableArr, startColumn = 0 });
+            format.SetParam(new Format.InitParam { table = tableArr, startColumn = 0 , calculateRange = true});
             format.Read(0, tableArr.GetLength(0));
         }
     }
