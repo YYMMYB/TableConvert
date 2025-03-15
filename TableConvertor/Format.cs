@@ -33,11 +33,15 @@ public class Format {
     public record struct InitParam {
         public string[,] table;
         public int startColumn;
+        public bool calculateRange;
     }
     public virtual void SetParam(InitParam param) {
-        this.colRange[0] = param.startColumn;
+        if (param.calculateRange) {
+            this.colRange[0] = param.startColumn;
+        }
         this.table = param.table;
     }
+
 
     public virtual void Reset() {
         value = null;
@@ -58,7 +62,9 @@ public class SingleFormat : Format {
 
     public override void SetParam(InitParam param) {
         base.SetParam(param);
-        colRange = [param.startColumn, param.startColumn + 1];
+        if (param.calculateRange) {
+            colRange = [param.startColumn, param.startColumn + 1];
+        }
     }
 
     public override void Read(int startRow, int endRow) {
@@ -85,15 +91,21 @@ public class SwitchFormat : Format {
 
     public override void SetParam(InitParam param) {
         base.SetParam(param);
-        param.startColumn += 1;
-        var end = param.startColumn;
-        foreach (var ch in cases.Values) {
-            ch.SetParam(param);
-            if (ch.EndCol > end) {
-                end = ch.EndCol;
+        if (param.calculateRange) {
+            param.startColumn += 1;
+            var end = param.startColumn;
+            foreach (var ch in cases.Values) {
+                ch.SetParam(param);
+                if (ch.EndCol > end) {
+                    end = ch.EndCol;
+                }
+            }
+            colRange[1] = end;
+        } else {
+            foreach (var ch in cases.Values) {
+                ch.SetParam(param);
             }
         }
-        colRange[1] = end;
     }
 
     public override void Reset() {
@@ -143,9 +155,13 @@ public class HFormat : Format {
         base.SetParam(param);
         foreach (var ch in children) {
             ch.SetParam(param);
-            param.startColumn = ch.EndCol;
+            if (param.calculateRange) {
+                param.startColumn = ch.EndCol;
+            }
         }
-        colRange[1] = children.Last().EndCol;
+        if (param.calculateRange) {
+            colRange[1] = children.Last().EndCol;
+        }
     }
 
     public override void Reset() {
@@ -180,7 +196,9 @@ public class ListFormat : Format {
     public override void SetParam(InitParam param) {
         base.SetParam(param);
         template.SetParam(param);
-        colRange = template.colRange;
+        if (param.calculateRange) {
+            colRange = template.colRange;
+        }
     }
 
     public override void Reset() {
