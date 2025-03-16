@@ -52,7 +52,7 @@ public class Tests {
                 table.Add(list);
                 //Console.WriteLine($"{suc}");
             }
-            Console.WriteLine(colCount);
+            //Console.WriteLine(colCount);
             string[,] tableArr = new string[table.Count, colCount];
             for (int i = 0; i < table.Count; i++) {
                 for (int j = 0; j < colCount; j++) {
