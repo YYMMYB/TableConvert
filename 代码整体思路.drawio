@@ -1,0 +1,139 @@
+<mxfile host="65bd71144e">
+    <diagram name="第 1 页" id="pcNHb7MaVwuD77KUi-DB">
+        <mxGraphModel dx="807" dy="973" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-24" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="O8LU-QyfUTYcMWNLKQEc-1" target="O8LU-QyfUTYcMWNLKQEc-23" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-26" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="O8LU-QyfUTYcMWNLKQEc-1" target="O8LU-QyfUTYcMWNLKQEc-4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-1" value="&lt;div&gt;Module&lt;/div&gt;&lt;div&gt;读取文件夹,文件, 并确定模块的嵌套关系&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="480" y="100" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-19" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="O8LU-QyfUTYcMWNLKQEc-3" target="O8LU-QyfUTYcMWNLKQEc-10" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="O8LU-QyfUTYcMWNLKQEc-3" target="O8LU-QyfUTYcMWNLKQEc-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-3" value="&lt;div&gt;Head&lt;/div&gt;&lt;div&gt;用于解析表头, 产生后续所需的所有信息&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="480" y="360" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-4" value="&lt;div&gt;Global&lt;/div&gt;&lt;div&gt;存储各种数据&lt;/div&gt;" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" parent="1" vertex="1">
+                    <mxGeometry y="520" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-22" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="O8LU-QyfUTYcMWNLKQEc-5" target="O8LU-QyfUTYcMWNLKQEc-6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-5" value="&lt;div&gt;Format&lt;/div&gt;&lt;div&gt;用于解析数据&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="680" y="360" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" style="edgeStyle=none;html=1;endArrow=diamond;endFill=1;" edge="1" parent="1" source="O8LU-QyfUTYcMWNLKQEc-6" target="2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-6" value="&lt;div&gt;RawValue&lt;/div&gt;&lt;div&gt;只有两种: string或List&lt;/div&gt;" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;size=0.125;" parent="1" vertex="1">
+                    <mxGeometry x="680" y="520" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-7" value="&lt;div&gt;Type&lt;/div&gt;&lt;div&gt;各种类型, 注意, 两个int数据, 但是约束不同也会被当作两个不同类型&lt;/div&gt;" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;size=0.125;" parent="1" vertex="1">
+                    <mxGeometry x="240" y="400" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-9" value="&lt;div&gt;Constraint&lt;/div&gt;&lt;div&gt;类型值范围的约束.外键, 整数范围等等&lt;/div&gt;" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;size=0.125;" parent="1" vertex="1">
+                    <mxGeometry x="240" y="520" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-20" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="2" target="O8LU-QyfUTYcMWNLKQEc-4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-10" value="&lt;div&gt;Layout&lt;/div&gt;&lt;div&gt;描述RawValue的信息. 例如Object的不同字段对应List的哪个index&lt;/div&gt;" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;size=0.125;" parent="1" vertex="1">
+                    <mxGeometry x="480" y="520" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-40" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="O8LU-QyfUTYcMWNLKQEc-11" target="O8LU-QyfUTYcMWNLKQEc-32" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-11" value="&lt;div&gt;各种Converter&lt;/div&gt;&lt;div&gt;用于RawValue -&amp;gt; 具体的数据类型的值.&lt;/div&gt;&lt;div&gt;默认只实现Json的&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="680" y="720" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-12" value="&lt;div&gt;Context&lt;/div&gt;&lt;div&gt;目前没实现. 用于处理存储在RawValue里的特殊信息, 如默认值&lt;/div&gt;" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;size=0.125;" parent="1" vertex="1">
+                    <mxGeometry x="930" y="820" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-15" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="O8LU-QyfUTYcMWNLKQEc-3" target="O8LU-QyfUTYcMWNLKQEc-7" edge="1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="310" y="670" as="sourcePoint"/>
+                        <mxPoint x="360" y="620" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-16" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="O8LU-QyfUTYcMWNLKQEc-7" target="O8LU-QyfUTYcMWNLKQEc-4" edge="1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="310" y="670" as="sourcePoint"/>
+                        <mxPoint x="360" y="620" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-17" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" source="O8LU-QyfUTYcMWNLKQEc-3" target="O8LU-QyfUTYcMWNLKQEc-9" edge="1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="310" y="670" as="sourcePoint"/>
+                        <mxPoint x="360" y="620" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-18" value="" style="endArrow=diamond;html=1;rounded=0;endFill=1;" parent="1" source="O8LU-QyfUTYcMWNLKQEc-9" target="O8LU-QyfUTYcMWNLKQEc-7" edge="1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="310" y="670" as="sourcePoint"/>
+                        <mxPoint x="360" y="620" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-25" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="O8LU-QyfUTYcMWNLKQEc-23" target="O8LU-QyfUTYcMWNLKQEc-3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="O8LU-QyfUTYcMWNLKQEc-23" target="O8LU-QyfUTYcMWNLKQEc-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-23" value="&lt;div&gt;File&lt;/div&gt;" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;size=0.125;" parent="1" vertex="1">
+                    <mxGeometry x="500" y="240" width="80" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-41" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="O8LU-QyfUTYcMWNLKQEc-30" target="O8LU-QyfUTYcMWNLKQEc-39" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-30" value="END" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" parent="1" vertex="1">
+                    <mxGeometry x="720" y="1149" width="40" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-33" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="O8LU-QyfUTYcMWNLKQEc-37" target="O8LU-QyfUTYcMWNLKQEc-30" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-32" value="过程" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" parent="1" vertex="1">
+                    <mxGeometry x="720" y="820" width="40" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-34" value="" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="O8LU-QyfUTYcMWNLKQEc-32" target="O8LU-QyfUTYcMWNLKQEc-35" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="740" y="860" as="sourcePoint"/>
+                        <mxPoint x="740" y="1180" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-35" value="RawValue -&amp;gt; JsonNode" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="680" y="900" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-36" value="" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="O8LU-QyfUTYcMWNLKQEc-35" target="O8LU-QyfUTYcMWNLKQEc-37" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="740" y="960" as="sourcePoint"/>
+                        <mxPoint x="740" y="1300" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-37" value="约束检查" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="680" y="1030" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="O8LU-QyfUTYcMWNLKQEc-39" value="&lt;div&gt;JsonNode&lt;/div&gt;&lt;div&gt;(容易序列化为string, 有C#提供的函数)&lt;/div&gt;" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;size=0.125;" parent="1" vertex="1">
+                    <mxGeometry x="680" y="1230" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=diamond;endFill=1;" edge="1" parent="1" source="O8LU-QyfUTYcMWNLKQEc-10" target="2">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="480" y="734" as="sourcePoint"/>
+                        <mxPoint x="120" y="576" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="2" value="&lt;div&gt;Table&lt;/div&gt;&lt;div&gt;每个表文件的信息&lt;/div&gt;" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;size=0.125;" vertex="1" parent="1">
+                    <mxGeometry x="240" y="680" width="120" height="80" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

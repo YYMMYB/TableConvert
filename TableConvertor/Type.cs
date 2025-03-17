@@ -3,44 +3,83 @@ using System.Runtime.InteropServices;
 namespace TableConvertor;
 
 public class Type {
-    public string Name { get; set; }
-    public List<Constraint> Constraint { get; set; }
+    public Module module;
+    public string name;
+    public List<Constraint> constraints = new();
 
-    public virtual bool Parse(string s, out Value? v) {
-        v = null;
-        return false;
+    public Type(string name) {
+        this.module = module;
+        this.name = name;
     }
+
+    public void AddConstraint(Constraint constraint) {
+        constraints.Add(constraint);
+    }
+
 }
 
 public class StringType : Type {
+    public StringType(string name) : base(name) {
+    }
 }
 
 public class FloatType : Type {
+    public FloatType(string name) : base(name) {
+    }
 }
 
 public class BoolType : Type {
+    public BoolType(string name) : base(name) {
+    }
 }
 
 public class IntType : Type {
+    public IntType(string name) : base(name) {
+    }
 }
 
 
 public class ListType : Type {
-    public Type? ValueType { get; set; }
+    public Type valueType;
+
+    public ListType(string name, Type valueType) : base(name) {
+        this.valueType = valueType;
+    }
+
+
 }
 
-public class DictType : Type {
-    public Type? KeyType { get; set; }
-    public Type? ValueType { get; set; }
+public class MapType : Type {
+    public Type keyType;
+    public Type valueType;
+    public MapType(string name, Type keyType, Type valueType) : base(name) {
+        this.keyType = keyType;
+        this.valueType = valueType;
+    }
 }
 
 public class ObjectType : Type {
-    public Dictionary<string, Type> Fields { get; set; } = new();
-    public Type? BaseType { get; set; }
+    public Dictionary<string, Type> fields = new();
+    public Type? baseType;
+
+    public ObjectType(string name, Type? baseType) : base(name) {
+        this.baseType = baseType;
+    }
+
+    public void AddField(string name, Type type) {
+        fields.Add(name, type);
+    }
 }
 
 public class EnumType : Type {
-    public List<string> Values { get; set; } = new();
+    public List<string> variants = new();
+
+    public EnumType(string name) : base(name) {
+    }
+
+    public void AddVariant(string name) {
+        variants.Add(name);
+    }
 }
 
 public class Constraint {

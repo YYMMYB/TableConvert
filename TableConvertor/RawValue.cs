@@ -25,7 +25,7 @@ public record class RawValue  {
 }
 
 public record class LiteralRawValue : RawValue {
-    string lit;
+    public string lit;
 
     public LiteralRawValue(string lit) {
         this.lit = lit;
