@@ -2,12 +2,6 @@ using System.Diagnostics;
 
 namespace TableConvertor;
 
-public static class CellUtil {
-    public static bool IsEmpty(string cell) {
-        return cell == null || cell.Length == 0;
-    }
-}
-
 
 
 public class Format {
@@ -20,7 +14,7 @@ public class Format {
     public virtual bool ExistSingleRow { get => false; }
     public virtual bool AllEmpty(int row) {
         for (var c = StartCol; c < EndCol; c++) {
-            if (!CellUtil.IsEmpty(table[row, c])) {
+            if (!StringUtil.IsEmptyValueString(table[row, c])) {
                 return false;
             }
         }
@@ -254,7 +248,7 @@ public class ListFormat : Format {
     public int NextRow(int startRow, int endRow) {
         for (int row = startRow + 1; row < endRow; row++) {
             foreach (var col in template.SingleCol()) {
-                if (!CellUtil.IsEmpty(table[row, col])) {
+                if (!StringUtil.IsEmptyValueString(table[row, col])) {
                     return row;
                 }
             }

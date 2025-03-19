@@ -169,8 +169,8 @@ public class Tests {
         json.ToString().ShouldBe(res);
     }
 
-    public HeadNode ParseHead(string file, int startRow, int endRow) {
-        HeadNode head;
+    public RawHead ParseHead(string file, int startRow, int endRow) {
+        RawHead head;
         using (var reader = new StreamReader(Path.Join(PROJ_DIR, file)))
         using (var csv = new CsvReader(reader, config)) {
             List<string[]> table = [];
@@ -192,19 +192,19 @@ public class Tests {
                 }
             }
 
-            head = new HeadNode(tableArr, [0, colCount]);
+            head = new RawHead(tableArr, [startRow, endRow],[0, colCount]);
 
-            head.Read(startRow, endRow);
+            head.Read();
         }
         return head;
     }
 
-    public void ShowHead(HeadNode head, int level) {
-        Console.WriteLine($"{level} {head.isVarient} {head.name}");
+    public void ShowHead(RawHead head, int level) {
+        Console.WriteLine($"{level} {head.isVertical} {head.content}");
         var i = 0;
         var vh = "h";
         foreach (var child in head.children) {
-            if (i == head.hChildrenCount) {
+            if (i == head.horizontalCount) {
                 vh = "v";
             }
             ShowHead(child, level + 1);

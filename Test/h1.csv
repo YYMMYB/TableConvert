@@ -3,7 +3,7 @@ A,B:list,C,D,L: list,,|x,XL:list,
 #c aaa,,,,#c aaa,,#c aaa,,
 #c bbb,,,,_,_:list,#c bbb,,
 ,,,,,,|y,Y,YY
-,,,,,,#c aaa,,
+,,,,,,#c aaa,YC,
 ,,,,,,#c bbb,,
 ,,,,,,,,
 ,,,,,,,,

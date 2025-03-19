@@ -21,42 +21,42 @@ public class LitLayout : Layout {
     }
 }
 
-public class ObjLayout : Layout {
-    public record struct Field {
-        public int index;
-        public Layout layout;
-    }
-    public Dictionary<string, Field> fields = new();
-    public Dictionary<string, ObjLayout> deriveds = new();
+//public class ObjLayout : Layout {
+//    public record struct Field {
+//        public int index;
+//        public Layout layout;
+//    }
+//    public Dictionary<string, Field> fields = new();
+//    public Dictionary<string, ObjLayout> deriveds = new();
 
 
-    public override JsonNode ToJson(RawValue rawValue) {
-        var rawV = (rawValue as ListRawValue)!;
-        var res = new JsonObject();
-        var ty = type as ObjectType;
-        foreach (var (fnm, fty) in ty.fields) {
-            var fnode = children[fnm].ToJson(rawV.list[fieldsIndex[fnm]]);
-            res.Add(fnm, fnode);
-        }
-        return res;
-    }
-}
+//    public override JsonNode ToJson(RawValue rawValue) {
+//        var rawV = (rawValue as ListRawValue)!;
+//        var res = new JsonObject();
+//        var ty = type as ObjectType;
+//        foreach (var (fnm, fty) in ty.fields) {
+//            var fnode = children[fnm].ToJson(rawV.list[fieldsIndex[fnm]]);
+//            res.Add(fnm, fnode);
+//        }
+//        return res;
+//    }
+//}
 
-public class MapLayout : Layout {
-    public bool isRefKey;
-    public List<string> refKeyIndex = new();
+//public class MapLayout : Layout {
+//    public bool isRefKey;
+//    public List<string> refKeyIndex = new();
 
-    public override JsonNode ToJson(RawValue rawValue) {
-        var rawV = (rawValue as ListRawValue)!;
-        var res = new JsonObject();
-        var ty = type as ObjectType;
-        foreach (var (fnm, fty) in ty.fields) {
-            var fnode = children[fnm].ToJson(rawV.list[fieldsIndex[fnm]]);
-            res.Add(fnm, fnode);
-        }
-        return res;
-    }
-}
+//    public override JsonNode ToJson(RawValue rawValue) {
+//        var rawV = (rawValue as ListRawValue)!;
+//        var res = new JsonObject();
+//        var ty = type as ObjectType;
+//        foreach (var (fnm, fty) in ty.fields) {
+//            var fnode = children[fnm].ToJson(rawV.list[fieldsIndex[fnm]]);
+//            res.Add(fnm, fnode);
+//        }
+//        return res;
+//    }
+//}
 
 public class ListLayout : Layout {
     public bool hasKey;
