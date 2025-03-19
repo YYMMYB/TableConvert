@@ -5,15 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace TableConvertor;
-public class Module {
+public class Module : Item {
     public string fullName;
     public string name;
     public Module? parent;
 
     // 名称 -> 全局路径 也就是 Global 里作为键的路径
-    public Dictionary<string, string> subModule = new();
-    public Dictionary<string, string> subType = new();
-    public Dictionary<string, string> subTable = new();
+    public Dictionary<string, string> items = new();
 
     public Module(Module? parent, string path) {
         var name = Path.GetDirectoryName(path);

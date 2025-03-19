@@ -1,6 +1,8 @@
 namespace TableConvertor;
 
-public class Table {
-    public Dictionary<Type, Layout> layouts = new();
+public class Table : Item {
+    public HeadNode head;
+    public Format format;
+    public Layout layout;
     public RawValue rawValue;
 }

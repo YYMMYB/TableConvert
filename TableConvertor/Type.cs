@@ -1,8 +1,9 @@
 using System.Runtime.InteropServices;
+using System.Text.Json.Nodes;
 
 namespace TableConvertor;
 
-public class Type {
+public class Type : Item {
     public Module module;
     public string name;
     public List<Constraint> constraints = new();
@@ -16,6 +17,9 @@ public class Type {
         constraints.Add(constraint);
     }
 
+    public JsonNode Parse(string str) {
+        throw new Exception();
+    }
 }
 
 public class StringType : Type {
