@@ -22,6 +22,10 @@ public record class RawValue  {
         return s;
     }
 
+    public virtual RawValue Get(int i) {
+        throw new NotImplementedException();
+    }
+
 }
 
 public record class LiteralRawValue : RawValue {
@@ -51,6 +55,9 @@ public record class ListRawValue : RawValue {
     }
     public void Add(RawValue v) {
         list.Add(v);
+    }
+    public override RawValue Get(int i) {
+        return list[i];
     }
     //public override Value Clone() {
     //    var ls = new List<Value>();

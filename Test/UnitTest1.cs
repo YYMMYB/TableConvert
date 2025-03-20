@@ -2,6 +2,7 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using Shouldly;
 using System.Globalization;
+using System.Reflection.Emit;
 using System.Text.Json.Nodes;
 using TableConvertor;
 
@@ -38,7 +39,8 @@ public class Tests {
         return cell.StartsWith("2");
     }
 
-    void ParseDataFile(string file, Format format) {
+    string[,] LoadTable(string file) {
+        string[,] tableArr;
         using (var reader = new StreamReader(Path.Join(PROJ_DIR, file)))
         using (var csv = new CsvReader(reader, config)) {
             List<string[]> table = [];
@@ -53,15 +55,20 @@ public class Tests {
                 //Console.WriteLine($"{suc}");
             }
             //Console.WriteLine(colCount);
-            string[,] tableArr = new string[table.Count, colCount];
+            tableArr = new string[table.Count, colCount];
             for (int i = 0; i < table.Count; i++) {
                 for (int j = 0; j < colCount; j++) {
                     tableArr[i, j] = table[i][j];
                 }
             }
-            format.SetParam(new Format.InitParam { table = tableArr, startColumn = 0 , calculateRange = true});
-            format.Read(0, tableArr.GetLength(0));
         }
+        return tableArr;
+    }
+
+    void ParseDataFile(string file, Format format) {
+        var tableArr = LoadTable(file);
+        format.SetParam(new Format.InitParam { table = tableArr, startColumn = 0, calculateRange = true });
+        format.Read(0, tableArr.GetLength(0));
     }
 
     [Test]
@@ -169,37 +176,14 @@ public class Tests {
         json.ToString().ShouldBe(res);
     }
 
-    public RawHead ParseHead(string file, int startRow, int endRow) {
-        RawHead head;
-        using (var reader = new StreamReader(Path.Join(PROJ_DIR, file)))
-        using (var csv = new CsvReader(reader, config)) {
-            List<string[]> table = [];
-            int colCount = -1;
-            while (csv.Read()) {
-                colCount = csv.ColumnCount;
-                var list = new string[colCount];
-                for (int i = 0; i < colCount; i++) {
-                    list[i] = csv.GetField(i);
-                }
-                table.Add(list);
-                //Console.WriteLine($"{suc}");
-            }
-            Console.WriteLine(colCount);
-            string[,] tableArr = new string[table.Count, colCount];
-            for (int i = 0; i < table.Count; i++) {
-                for (int j = 0; j < colCount; j++) {
-                    tableArr[i, j] = table[i][j];
-                }
-            }
-
-            head = new RawHead(tableArr, [startRow, endRow],[0, colCount]);
-
-            head.Read();
-        }
+    public RawHead ParseRawHead(string file, int startRow, int endRow) {
+        var tableArr = LoadTable(file);
+        var head = new RawHead(tableArr, [startRow, endRow], [0, tableArr.GetLength(1)]);
+        head.Read();
         return head;
     }
 
-    public void ShowHead(RawHead head, int level) {
+    public void ShowRawHead(RawHead head, int level) {
         Console.WriteLine($"{level} {head.isVertical} {head.content}");
         var i = 0;
         var vh = "h";
@@ -207,17 +191,73 @@ public class Tests {
             if (i == head.horizontalCount) {
                 vh = "v";
             }
-            ShowHead(child, level + 1);
+            ShowRawHead(child, level + 1);
             i++;
         }
     }
 
     [Test]
-    public void TestHead() {
+    public void TestRawHead() {
         var fileName = "h1";
-        var head = ParseHead(fileName + ".csv", 0, 7);
-        ShowHead(head,0);
+        var head = ParseRawHead(fileName + ".csv", 0, 7);
+        ShowRawHead(head, 0);
     }
+
+    public void ShowHead(Head head, int level) {
+        Console.WriteLine($"{level} {head.name} {head.typeName} {head.GetType()}");
+        if (head is ListHead lh) {
+            if (lh.keyHead != null) {
+                ShowHead(lh.keyHead, level + 1);
+            }
+            ShowHead(lh.valueHead, level + 1);
+        } else if (head is ObjectHead oh) {
+            foreach (var h in oh.fields) {
+                ShowHead(h, level + 1);
+            }
+            foreach (var (k, h) in oh.deriveds) {
+                Console.Write($"{k} ");
+                ShowHead(h, level + 1);
+            }
+        }
+    }
+
+    RawHead F1() {
+        var fileName = "h1";
+        var rawHead = ParseRawHead(fileName + ".csv", 0, 8);
+        return rawHead;
+    }
+
+    [Test]
+    public void TestHead() {
+        var rawHead = F1();
+        var head = Head.Create(null, null, rawHead);
+
+        ShowHead(head, 0);
+    }
+
+    [Test]
+    public void TestHeadCreateFormat() {
+        var rawHead = F1();
+        var head = Head.Create(null, null, rawHead);
+        var format = head.CreateFormat();
+        format.SetParam(new Format.InitParam { calculateRange = false, table = rawHead.table });
+        format.Read(9, 24);
+        var rawValue = format.value.ToJson();
+        Console.WriteLine(rawValue);
+    }
+
+    [Test]
+    public void TestHeadRead() {
+        var rawHead = F1();
+        var head = Head.Create(null, null, rawHead);
+        var format = head.CreateFormat();
+        format.SetParam(new Format.InitParam { calculateRange = false, table = rawHead.table });
+        format.Read(9, 24);
+        var rawValue = format.value;
+        var json = head.Read(rawValue);
+        Console.WriteLine(json);
+    }
+
 
     [Test]
     public void TestValueEq() {
