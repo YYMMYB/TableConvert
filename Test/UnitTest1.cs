@@ -3,7 +3,10 @@ using CsvHelper.Configuration;
 using Shouldly;
 using System.Globalization;
 using System.Reflection.Emit;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Unicode;
 using TableConvertor;
 
 namespace Test;
@@ -11,6 +14,8 @@ namespace Test;
 public class Tests {
     public static string PROJ_DIR = "D:\\Project\\TableConvertor\\Test";
     CsvConfiguration config;
+
+
 
     [SetUp]
     public void Setup() {
@@ -252,10 +257,13 @@ public class Tests {
         var head = Head.Create(null, null, rawHead);
         var format = head.CreateFormat();
         format.SetParam(new Format.InitParam { calculateRange = false, table = rawHead.table });
-        format.Read(9, 24);
+        format.Read(9, 29);
         var rawValue = format.value;
         var json = head.Read(rawValue);
-        Console.WriteLine(json);
+        var ser = JsonSerializer.Serialize(json, StringUtil.JsonOpt);
+        using (var w = new StreamWriter(Path.Join(PROJ_DIR, "ttt.json"))) {
+            w.Write(ser);
+        }
     }
 
 
@@ -284,5 +292,17 @@ public class Tests {
         Console.WriteLine(v1 == v2);
         //v1.ShouldBe(v2);
     }
+    class D {
+        public string S { get; set; }
+    }
+    [Test]
+    public void TTT() {
+        var s = "\"";
 
+        var ser = JsonSerializer.Serialize(s, StringUtil.JsonOpt);
+        using (var w = new StreamWriter(Path.Join(PROJ_DIR, "ttt.json"))) {
+            w.Write(ser);
+        }
+        Console.WriteLine(ser);
+    }
 }

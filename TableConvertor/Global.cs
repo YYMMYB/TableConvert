@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace TableConvertor;
@@ -29,6 +31,10 @@ public class Item {
 
 
 public static class StringUtil {
+    public static JsonSerializerOptions JsonOpt = new JsonSerializerOptions() {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
+
     public static string Constraint = "builtin.constraint";
     public static Dictionary<string, string> attrs = new Dictionary<string, string>() {
         {"c", Constraint},

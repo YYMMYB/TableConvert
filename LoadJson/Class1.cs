@@ -10,10 +10,16 @@ namespace LoadJson;
 [JsonDerivedType(typeof(DataDD1), typeDiscriminator: "dd1")]
 [JsonDerivedType(typeof(DataDD2), typeDiscriminator: "dd2")]
 class DataBase {
+    public Dictionary<Point, int> Point { get; set; } = new();
 }
 
-class DataD : DataBase { }
+class DataD : DataBase { }  
 class DataDD1 : DataD { }
 class DataDD2 : DataD { }
 
+
+public class Point {
+    public int X { get; set; }
+    public int Y { get; set; }
+}
 

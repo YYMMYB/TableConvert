@@ -176,7 +176,7 @@ public class ListHead : Head {
             if (type == "map") {
                 RemoveHelperField(k!);
                 RemoveHelperField(v);
-                map.Add(k!.ToJsonString(), v);
+                map.Add(ConvertToKey(k!), v);
             } else if (type == "list") {
                 RemoveHelperField(v);
                 arr.Add(v);
@@ -190,6 +190,11 @@ public class ListHead : Head {
         } else {
             throw new Exception();
         }
+    }
+
+    public string ConvertToKey(JsonNode node) {
+        var s = node.ToJsonString(StringUtil.JsonOpt);
+        return s;
     }
 
     public override Format CreateFormat() {
