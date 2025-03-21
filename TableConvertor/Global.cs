@@ -11,22 +11,48 @@ namespace TableConvertor;
 public class Global {
     public static Global I { get; } = new();
     public Dictionary<string, Item> items = new();
+    public Module root;
 
     public string CommonTypeFullName(string type) {
         return $".~common.{type}";
     }
 
-    public void CreateModules(string path) {
-
+    public Module CreateParentModules(string path) {
+        var pathComp = StringUtil.SplitItem(path);
+        var mod = root;
+        for (int i = 0; i < pathComp.Length - 1; i++) {
+            var name = pathComp[i];
+            if (mod.GetItem<Module>(name) == null) {
+                var ch = new Module();
+                ch.thisname = name;
+                mod.AddItem(ch);
+            }
+            mod = mod.GetItem<Module>(name);
+        }
+        return mod;
     }
 
-    public T GetItem<T>(string path) where T : Item {
-        return (T)items[path];
+    public T? GetItem<T>(string path) where T : Item {
+        if (!items.ContainsKey(path)) {
+            return null;
+        } else {
+            return (T)items[path];
+        }
+    }
+
+    // 只给Module的AddItem用, 别的不要用
+    public void AddItem<T>(string path,T item) where T : Item {
+        items.Add(path,item);
     }
 }
 
-public class Item {
 
+// Module
+// Type
+// Table
+// 的父类, 用于统一存储, 防止重名
+public abstract class Item {
+    public abstract string Name { get; }
 }
 
 

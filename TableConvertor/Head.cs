@@ -19,7 +19,7 @@ public class Head {
 
     public Dictionary<string, List<string>> attrs = new();
 
-    public static Head Create(Module mod, Head parent, RawHead raw) {
+    public static Head Create(Module mod, Head? parent, RawHead raw) {
         Head head;
 
         if (raw.isVertical) {
