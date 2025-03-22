@@ -13,11 +13,7 @@ public class Global {
     public Dictionary<string, Item> items = new();
     public Module root;
 
-    public string CommonTypeFullName(string type) {
-        return $".~common.{type}";
-    }
-
-    public Module CreateParentModules(string path) {
+    public Module GetOrCreateParentModules(string path) {
         var pathComp = StringUtil.SplitItem(path);
         var mod = root;
         for (int i = 0; i < pathComp.Length - 1; i++) {
@@ -41,8 +37,12 @@ public class Global {
     }
 
     // 只给Module的AddItem用, 别的不要用
-    public void AddItem<T>(string path,T item) where T : Item {
-        items.Add(path,item);
+    public void AddItem(string path, Item item) {
+        items.Add(path, item);
+    }
+
+    public bool ExistItem(string path) {
+        return items.ContainsKey(path);
     }
 }
 
@@ -53,6 +53,8 @@ public class Global {
 // 的父类, 用于统一存储, 防止重名
 public abstract class Item {
     public abstract string Name { get; }
+    public abstract string FullName { get; }
+    public abstract Module ParentMod { get; set; }
 }
 
 
@@ -78,6 +80,9 @@ public static class StringUtil {
     public static string KeywordPrefix = "$";
 
     public static string TypeSplitor = ":";
+
+    public static string TableNamePrefix = "_t_";
+
 
     public static bool IsEmptyString(string cell) {
         return cell == null || cell.Trim().Length == 0;
@@ -171,7 +176,19 @@ public static class StringUtil {
     }
 
 
-    public static string TypeFieldName = "$type";
-    public static string FirstFieldName = "$first";
+    public static string TypeFieldName = KeywordPrefix + "type";
+    public static string FirstFieldName = KeywordPrefix + "first";
+
+    public static string KeyFieldName = KeywordPrefix + "key";
+    public static string ValueFieldName = KeywordPrefix + "value";
+
+    public static string TableHeadPartName = KeywordPrefix + "head";
+    public static string TableValuePartName = KeywordPrefix + "value";
+    public static string TablePartEndName = KeywordPrefix + "end";
+
+
+    public static string TableName(string name) {
+        return TableNamePrefix + name;
+    }
 }
 

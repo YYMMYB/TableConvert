@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -15,6 +16,7 @@ public class Head {
     public int[] rowRange;
 
     public string name;
+    public string autoName;
     public string typeName;
 
     public Dictionary<string, List<string>> attrs = new();
@@ -75,9 +77,12 @@ public class Head {
         if (head is ListHead lh) {
             if (raw.children.Count == 1) {
                 lh.valueHead = Create(mod, head, raw.children[0]);
+                lh.valueHead.name = StringUtil.ValueFieldName;
             } else if (raw.children.Count == 2) {
                 lh.keyHead = Create(mod, head, raw.children[0]);
+                lh.keyHead.name = StringUtil.KeyFieldName;
                 lh.valueHead = Create(mod, head, raw.children[1]);
+                lh.valueHead.name = StringUtil.ValueFieldName;
             } else {
                 throw new Exception();
             }
@@ -140,6 +145,26 @@ public class Head {
 
     public virtual Format CreateFormat() { throw new NotImplementedException(); }
 
+    public virtual string CreateType() {
+        throw new NotImplementedException();
+    }
+
+    public void CalcAutoName() {
+        autoName = StringUtil.JoinIdent(parent.autoName, name);
+    }
+
+    public virtual void CalcFullTypeName() {
+        CalcAutoName();
+        if (StringUtil.IsAbsItem(typeName)) {
+            return;
+        }
+
+        var tn = typeName;
+        if (tn == null) {
+            tn = autoName;
+        }
+        typeName = mod.CulcFullName(tn);
+    }
 }
 
 public class ListHead : Head {
@@ -209,6 +234,36 @@ public class ListHead : Head {
         res.colRange = colRange;
         return res;
     }
+
+    public override string CreateType() {
+        CalcFullTypeName();
+        if (Global.I.ExistItem(typeName)) {
+            // todo 检验
+            return typeName;
+        }
+        var typeMod = Global.I.GetOrCreateParentModules(typeName);
+        // 必须先算value, 因为key可能会引用value的东西
+        var vt = valueHead.CreateType();
+        if (type == "map") {
+            string kt;
+            if (keyHead is RefHead rkh) {
+                var k = rkh.Target(valueHead);
+                kt = k.typeName;
+            } else {
+                Debug.Assert(keyHead!=null);
+                keyHead.CreateType();
+                kt = keyHead.typeName;
+            }
+            var t = new MapType(typeName, kt, vt);
+            typeMod.AddItem(t);
+        } else if (type == "list") {
+            var t = new ListType(typeName, vt);
+            typeMod.AddItem(t);
+        } else {
+            throw new Exception();
+        }
+        return typeName;
+    }
 }
 
 public class ObjectHead : Head {
@@ -217,6 +272,15 @@ public class ObjectHead : Head {
     public Head? baseHead;
     public Dictionary<string, Head> deriveds = new();
     public int switchCol = -1;
+
+    public Head? FieldByName(string name) {
+        foreach (Head head in fields) {
+            if (head.name == name) {
+                return head;
+            }
+        }
+        return null;
+    }
 
     public override JsonNode Read(RawValue raw) {
         var lraw = (raw as ListRawValue)!;
@@ -261,6 +325,34 @@ public class ObjectHead : Head {
         res.colRange = colRange;
         return res;
     }
+
+    public override string CreateType() {
+        CalcFullTypeName();
+        if (Global.I.ExistItem(typeName)) {
+            // todo 检验
+            return typeName;
+        }
+
+        var typeMod = Global.I.GetOrCreateParentModules(typeName);
+        var fts = new Dictionary<string, string>();
+        foreach (var f in fields) {
+            var t = f.CreateType();
+            fts.Add(f.name, t);
+        }
+        var ty = new ObjectType(typeName, null);
+        typeMod.AddItem(ty);
+
+        foreach(var (dn, d) in deriveds) {
+            var tn = d.CreateType();
+            var t = Global.I.GetItem<ObjectType>(tn);
+            if(t.baseType!=null &&t.baseType!=typeName) {
+                throw new Exception();
+            }
+            t.baseType = typeName;
+        }
+
+        return typeName;
+    }
 }
 
 public class SingleHead : Head {
@@ -293,8 +385,26 @@ public class SingleHead : Head {
         res.colRange = colRange;
         return res;
     }
+
+    public override void CalcFullTypeName() {
+        typeName = Global.I.root.CulcFullName(type);
+    }
+
+    public override string CreateType() {
+        CalcFullTypeName();
+        // todo enum 和 约束判断 无约束用全局的, 有约束用特殊的
+        // 目前都没有约束, 所以先一直用全局的
+        return typeName;
+    }
 }
 
 public class RefHead : Head {
     public string[] r;
+
+    public Head Target(Head root) {
+        foreach (var n in r) {
+            root = (root as ObjectHead).FieldByName(n);
+        }
+        return root;
+    }
 }
