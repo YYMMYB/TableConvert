@@ -8,11 +8,8 @@ namespace TableConvertor;
 public class Project {
     public void Load(Module parent, string folder) {
         foreach (var p in Directory.GetFileSystemEntries(folder)) {
-            Console.WriteLine(p);
             if (Directory.Exists(p)) {
                 var name = Path.GetFileName(p);
-                Console.WriteLine(name);
-
                 var mod = CreateModule(parent, name);
                 Load(mod, p);
             } else if (File.Exists(p)) {

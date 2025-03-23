@@ -1,9 +1,16 @@
 // See https://aka.ms/new-console-template for more information
 
 
-List<int> list = [1, 2, 3, 4, 5];
+using TableConvertor;
 
-foreach(var i in list[1..^0])
-{
-    Console.WriteLine(i);
+var dataPath = Path.Join(Environment.CurrentDirectory, "out", "data");
+var codePath = Path.Join(Environment.CurrentDirectory, "out", "code");
+
+if (args.Length == 1) {
+    var root = args[0];
+    var proj = new Project();
+    proj.Load(Global.I.root, root);
+    var dg = new DataGen(Global.I.root, dataPath);
+    dg.Gen(dg.rootMod, dg.rootFolder);
 }
+Console.ReadLine();
