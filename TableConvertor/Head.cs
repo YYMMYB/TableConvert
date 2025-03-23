@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -17,7 +18,8 @@ public class Head {
 
     public string name;
     public string autoName;
-    public string typeName;
+    public string? typeName;
+    public string? fullTypeName;
 
     public Dictionary<string, List<string>> attrs = new();
 
@@ -73,6 +75,7 @@ public class Head {
         head.mod = mod;
         head.rowRange = raw.rowRange;
         head.colRange = raw.colRange;
+        head.parent = parent;
 
         if (head is ListHead lh) {
             if (raw.children.Count == 1) {
@@ -145,26 +148,34 @@ public class Head {
 
     public virtual Format CreateFormat() { throw new NotImplementedException(); }
 
-    public virtual string CreateType() {
+    public virtual string CreateType(string? mid) {
         throw new NotImplementedException();
     }
 
-    public void CalcAutoName() {
-        autoName = StringUtil.JoinIdent(parent.autoName, name);
+    public void CalcAutoName(string? mid) {
+        string p = parent?.autoName ?? "";
+        if (mid == null) {
+            autoName = StringUtil.JoinIdent(p, name);
+        } else {
+            autoName = StringUtil.JoinIdent(p, mid, name);
+        }
     }
 
-    public virtual void CalcFullTypeName() {
-        CalcAutoName();
-        if (StringUtil.IsAbsItem(typeName)) {
-            return;
+    public virtual void CalcFullTypeName(string? mid) {
+        CalcAutoName(mid);
+        if (typeName != null && StringUtil.IsAbsItem(typeName)) {
+            fullTypeName = typeName;
+            typeName = StringUtil.ItemName(fullTypeName);
+        } else {
+            var tn = typeName;
+            if (tn == null) {
+                tn = autoName;
+            }
+            typeName = tn;
+            fullTypeName = mod.CulcFullName(tn);
         }
-
-        var tn = typeName;
-        if (tn == null) {
-            tn = autoName;
-        }
-        typeName = mod.CulcFullName(tn);
     }
+
 }
 
 public class ListHead : Head {
@@ -235,24 +246,24 @@ public class ListHead : Head {
         return res;
     }
 
-    public override string CreateType() {
-        CalcFullTypeName();
-        if (Global.I.ExistItem(typeName)) {
+    public override string CreateType(string? mid) {
+        CalcFullTypeName(mid);
+        if (Global.I.ExistItem(fullTypeName)) {
             // todo 检验
             return typeName;
         }
-        var typeMod = Global.I.GetOrCreateParentModules(typeName);
+        var typeMod = Global.I.GetOrCreateParentModules(fullTypeName);
         // 必须先算value, 因为key可能会引用value的东西
-        var vt = valueHead.CreateType();
+        var vt = valueHead.CreateType(null);
         if (type == "map") {
             string kt;
             if (keyHead is RefHead rkh) {
                 var k = rkh.Target(valueHead);
-                kt = k.typeName;
+                kt = k.fullTypeName;
             } else {
-                Debug.Assert(keyHead!=null);
-                keyHead.CreateType();
-                kt = keyHead.typeName;
+                Debug.Assert(keyHead != null);
+                keyHead.CreateType(null);
+                kt = keyHead.fullTypeName;
             }
             var t = new MapType(typeName, kt, vt);
             typeMod.AddItem(t);
@@ -326,29 +337,29 @@ public class ObjectHead : Head {
         return res;
     }
 
-    public override string CreateType() {
-        CalcFullTypeName();
-        if (Global.I.ExistItem(typeName)) {
+    public override string CreateType(string? mid) {
+        CalcFullTypeName(mid);
+        if (Global.I.ExistItem(fullTypeName)) {
             // todo 检验
             return typeName;
         }
 
-        var typeMod = Global.I.GetOrCreateParentModules(typeName);
+        var typeMod = Global.I.GetOrCreateParentModules(fullTypeName);
         var fts = new Dictionary<string, string>();
         foreach (var f in fields) {
-            var t = f.CreateType();
+            var t = f.CreateType(null);
             fts.Add(f.name, t);
         }
         var ty = new ObjectType(typeName, null);
         typeMod.AddItem(ty);
 
-        foreach(var (dn, d) in deriveds) {
-            var tn = d.CreateType();
+        foreach (var (dn, d) in deriveds) {
+            var tn = d.CreateType(dn);
             var t = Global.I.GetItem<ObjectType>(tn);
-            if(t.baseType!=null &&t.baseType!=typeName) {
+            if (t.baseType != null && t.baseType != fullTypeName) {
                 throw new Exception();
             }
-            t.baseType = typeName;
+            t.baseType = fullTypeName;
         }
 
         return typeName;
@@ -386,14 +397,40 @@ public class SingleHead : Head {
         return res;
     }
 
-    public override void CalcFullTypeName() {
-        typeName = Global.I.root.CulcFullName(type);
+    public override void CalcFullTypeName(string? mid) {
+        // todo 约束判断 无约束用全局的, 有约束用特殊的
+        // 目前都没有约束, 所以先一直用全局的
+        fullTypeName = Global.I.root.CulcFullName(type);
+        typeName = StringUtil.ItemName(fullTypeName);
     }
 
-    public override string CreateType() {
-        CalcFullTypeName();
-        // todo enum 和 约束判断 无约束用全局的, 有约束用特殊的
-        // 目前都没有约束, 所以先一直用全局的
+    public override string CreateType(string? mid) {
+        CalcFullTypeName(mid);
+        if (Global.I.ExistItem(fullTypeName)) {
+            // todo 检验
+            return typeName;
+        }
+        var typeMod = Global.I.GetOrCreateParentModules(fullTypeName);
+        Type t;
+        if (type == "string" ) {
+            t = new StringType(typeName);
+        } else if (type == "float") {
+            t = new FloatType(typeName);
+        } else if (type == "int") {
+            t = new IntType(typeName);
+        } else if (type == "bool") {
+            t = new BoolType(typeName);
+        } else if (type == "enum") { 
+            t = new EnumType(typeName);
+            //throw new Exception();
+        }
+        else if (type == null) {
+            throw new Exception();
+        } else {
+            throw new Exception();
+        }
+        typeMod.AddItem(t);
+        // todo enum
         return typeName;
     }
 }

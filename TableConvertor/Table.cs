@@ -4,10 +4,10 @@ using System.Globalization;
 
 namespace TableConvertor;
 
-public class Table : Item {
+public class Table : Module {
     public string[,] tableArr;
-    public int[] headRange;
-    public int[] valueRange;
+    public int[] headRange = [-1,-1];
+    public int[] valueRange = [-1,-1];
 
     public int[] ColRange => [1, tableArr.GetLength(1)];
 
@@ -16,13 +16,13 @@ public class Table : Item {
     public Format format;
     public RawValue rawValue;
 
-    public string thisname;
-    public override string Name => thisname;
+    //public string thisname;
+    //public override string Name => thisname;
 
-    public override string FullName => ParentMod.CulcFullName(Name);
+    //public override string FullName => ParentMod.CulcFullName(Name);
 
-    Module mod;
-    public override Module ParentMod { get => mod; set => mod = value; }
+    //Module mod;
+    //public override Module ParentMod { get => mod; set => mod = value; }
 
     public static Table CreateByCsv(string path) {
         var table = new Table();
@@ -64,6 +64,10 @@ public class Table : Item {
         int defaultIndex = 0;
         for (int i = 0; i < tableArr.GetLength(0); i++) {
             var s = tableArr[i, col].Trim();
+            if (StringUtil.IsEmptyString(s)) {
+                continue;
+            }
+
             if (canDefault && s == StringUtil.KeywordPrefix) {
                 s = defaultOrder[defaultIndex];
                 defaultIndex += 1;
@@ -76,6 +80,8 @@ public class Table : Item {
             } else if (s == StringUtil.TableValuePartName) {
                 headRange[1] = i;
                 valueRange[0] = i;
+                valueRange[1] = tableArr.GetLength(0);
+                break;
             } else {
                 throw new Exception();
             }
@@ -88,15 +94,16 @@ public class Table : Item {
     }
 
     public void LoadHead() {
-        head = Head.Create(mod, null, rawHead);
+        head = Head.Create(this, null, rawHead);
     }
 
     public void LoadType() {
-        head.CreateType();
+        head.CreateType(null);
     }
 
     public void LoadFormat() {
         format = head.CreateFormat();
+        format.SetParam(new Format.InitParam { table = tableArr });
     }
 
     public void LoadRawValue() {

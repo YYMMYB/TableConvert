@@ -6,19 +6,24 @@ using System.Threading.Tasks;
 
 namespace TableConvertor;
 public class Project {
-    public string rootPath;
-    public string tablePath;
-
-    public void LoadTables(Module parent ,string folder) {
-        foreach (var name in Directory.GetFileSystemEntries(folder)) {
-            var p = Path.Join(folder, name);
+    public void Load(Module parent, string folder) {
+        foreach (var p in Directory.GetFileSystemEntries(folder)) {
+            Console.WriteLine(p);
             if (Directory.Exists(p)) {
+                var name = Path.GetFileName(p);
+                Console.WriteLine(name);
+
                 var mod = CreateModule(parent, name);
-                LoadTables(mod,p);
+                Load(mod, p);
             } else if (File.Exists(p)) {
                 if (Path.GetExtension(p) == ".csv") {
                     var table = Table.CreateByCsv(p);
                     parent.AddItem(table);
+                    table.LoadRawHead();
+                    table.LoadHead();
+                    table.LoadType();
+                    table.LoadFormat();
+                    table.LoadRawValue();
                 } else {
                     Console.WriteLine($"未处理文件 {p}");
                 }
@@ -30,6 +35,7 @@ public class Project {
 
     public Module CreateModule(Module parent, string name) {
         var mod = new Module();
+        mod.thisname = name;
         parent.AddItem(mod);
         return mod;
     }

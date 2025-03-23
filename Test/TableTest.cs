@@ -1,7 +1,5 @@
 using CsvHelper;
-using CsvHelper.Configuration;
 using Shouldly;
-using System.Globalization;
 using System.Reflection.Emit;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -11,17 +9,9 @@ using TableConvertor;
 
 namespace Test;
 
-public class Tests {
-    public static string PROJ_DIR = "D:\\Project\\TableConvertor\\Test";
-    CsvConfiguration config;
-
-
-
+public class TableTest {
     [SetUp]
     public void Setup() {
-        config = new CsvConfiguration(CultureInfo.InvariantCulture) {
-            HasHeaderRecord = false
-        };
     }
 
     bool IsValue(string cell) {
@@ -46,8 +36,8 @@ public class Tests {
 
     string[,] LoadTable(string file) {
         string[,] tableArr;
-        using (var reader = new StreamReader(Path.Join(PROJ_DIR, file)))
-        using (var csv = new CsvReader(reader, config)) {
+        using (var reader = new StreamReader(Path.Join(C.PROJ_DIR, file)))
+        using (var csv = new CsvReader(reader, C.config)) {
             List<string[]> table = [];
             int colCount = -1;
             while (csv.Read()) {
@@ -101,7 +91,7 @@ public class Tests {
         );
         ParseDataFile(fileName + ".csv", format);
         var json = format.value.ToJson();
-        using (var writer = new StreamWriter(Path.Join(PROJ_DIR, fileName + ".json"))) {
+        using (var writer = new StreamWriter(Path.Join(C.PROJ_DIR, fileName + ".json"))) {
             writer.Write(json);
         }
         var res = """
@@ -261,7 +251,7 @@ public class Tests {
         var rawValue = format.value;
         var json = head.Read(rawValue);
         var ser = JsonSerializer.Serialize(json, StringUtil.JsonOpt);
-        using (var w = new StreamWriter(Path.Join(PROJ_DIR, "ttt.json"))) {
+        using (var w = new StreamWriter(Path.Join(C.PROJ_DIR, "ttt.json"))) {
             w.Write(ser);
         }
     }
@@ -300,7 +290,7 @@ public class Tests {
         var s = "\"";
 
         var ser = JsonSerializer.Serialize(s, StringUtil.JsonOpt);
-        using (var w = new StreamWriter(Path.Join(PROJ_DIR, "ttt.json"))) {
+        using (var w = new StreamWriter(Path.Join(C.PROJ_DIR, "ttt.json"))) {
             w.Write(ser);
         }
         Console.WriteLine(ser);

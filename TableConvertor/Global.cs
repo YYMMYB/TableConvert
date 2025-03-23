@@ -12,11 +12,19 @@ public class Global {
     public static Global I { get; } = new();
     public Dictionary<string, Item> items = new();
     public Module root;
+    static Global() {
+        I = new();
+        I.root = Module.CreateRootModule();
+        I.AddItem(I.root.FullName, I.root);
+    }
 
-    public Module GetOrCreateParentModules(string path) {
-        var pathComp = StringUtil.SplitItem(path);
-        var mod = root;
-        for (int i = 0; i < pathComp.Length - 1; i++) {
+    public Module GetOrCreateParentModules(string absPath) {
+        if (!StringUtil.IsAbsItem(absPath)) {
+            throw new Exception();
+        }
+        var pathComp = StringUtil.SplitItem(absPath);
+        var mod = Global.I.GetItem<Module>(StringUtil.RootPath(absPath));
+        for (int i = 2; i < pathComp.Length - 1; i++) {
             var name = pathComp[i];
             if (mod.GetItem<Module>(name) == null) {
                 var ch = new Module();
@@ -54,7 +62,7 @@ public class Global {
 public abstract class Item {
     public abstract string Name { get; }
     public abstract string FullName { get; }
-    public abstract Module ParentMod { get; set; }
+    public abstract Module? ParentMod { get; set; }
 }
 
 
@@ -81,7 +89,6 @@ public static class StringUtil {
 
     public static string TypeSplitor = ":";
 
-    public static string TableNamePrefix = "_t_";
 
 
     public static bool IsEmptyString(string cell) {
@@ -121,6 +128,9 @@ public static class StringUtil {
     }
     public static string[] SplitItem(string s) {
         return s.Split(ItemSplitor);
+    }
+    public static string RootPath(string s) {
+        return s.Substring(0, s.IndexOf('.', 1));
     }
     public static bool IsAbsItem(string path) {
         return path.StartsWith(ItemSplitor);
@@ -187,8 +197,12 @@ public static class StringUtil {
     public static string TablePartEndName = KeywordPrefix + "end";
 
 
+    //public static string TableNamePrefix = "_t_";
     public static string TableName(string name) {
-        return TableNamePrefix + name;
+        //return TableNamePrefix + name;
+        return name;
     }
+
+    public static string RootModuleName = KeywordPrefix;
 }
 
