@@ -412,7 +412,7 @@ public class SingleHead : Head {
         }
         var typeMod = Global.I.GetOrCreateParentModules(fullTypeName);
         Type t;
-        if (type == "string" ) {
+        if (type == "string") {
             t = new StringType(typeName);
         } else if (type == "float") {
             t = new FloatType(typeName);
@@ -420,17 +420,16 @@ public class SingleHead : Head {
             t = new IntType(typeName);
         } else if (type == "bool") {
             t = new BoolType(typeName);
-        } else if (type == "enum") { 
+        } else if (type == "enum") {
+            // todo enum
             t = new EnumType(typeName);
             //throw new Exception();
-        }
-        else if (type == null) {
+        } else if (type == null) {
             throw new Exception();
         } else {
             throw new Exception();
         }
         typeMod.AddItem(t);
-        // todo enum
         return typeName;
     }
 }
