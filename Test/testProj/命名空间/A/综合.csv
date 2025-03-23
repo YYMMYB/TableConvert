@@ -3,7 +3,7 @@
 $,   表:map,,,,,,,,,,,
 ,_    :r   id   ,_:   o  值,,,,,,,,,,
 ,,  id  :  i   ,  name  :  s,嵌套: map,,,自动结构体,,,,,
-,,,,$key : s,$value : map,,pos,,skill_info,,,
+,,,,$key : s,$value : map,,pos : o .$.Vector2,,skill_info,,,
 ,,,,,_ : s,_ : list,x : i,y : i,id : i,param,,
 ,,,,,,_ : s,,,,time: f,dmg: i,
 ,,,,,,,,,,,,

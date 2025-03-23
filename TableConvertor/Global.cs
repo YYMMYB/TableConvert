@@ -130,7 +130,11 @@ public static class StringUtil {
         return s.Split(ItemSplitor);
     }
     public static string RootPath(string s) {
-        return s.Substring(0, s.IndexOf('.', 1));
+        var len = s.IndexOf('.', 1);
+        if (len == -1) {
+            len = s.Length;
+        }
+        return s.Substring(0, len);
     }
     public static bool IsAbsItem(string path) {
         return path.StartsWith(ItemSplitor);
