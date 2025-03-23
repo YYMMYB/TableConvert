@@ -6,48 +6,36 @@ using System.Threading.Tasks;
 
 namespace TableConvertor;
 public class Module : Item {
-    public override string Name => thisname;
-    public override string FullName => GetPath();
-    public override Module? ParentMod { get => parent; set => parent = value; }
 
-    Module? parent;
-    public string thisname;
-    public Dictionary<string, string> items = new();
+    public Module(string name) : base(name) { }
 
-    string _path;
-    public string GetPath() {
-        if (_path == null) {
-            //if (this == Global.I.root) {
-            //    _path = StringUtil.RootModuleName;
-            //} else if (ParentMod == Global.I.root) {
-            //    _path = StringUtil.JoinItem("", thisname);
-            //} else {
-            //    _path = StringUtil.JoinItem(ParentMod.GetPath(), thisname);
-            //}
-            _path = StringUtil.JoinItem(ParentMod?.GetPath()??"", thisname);
-        }
-        return _path;
-    }
+    public Dictionary<string, Item> items = new();
+
+
     public string CulcFullName(string name) {
         return StringUtil.JoinItem(GetPath(), name);
     }
 
-    public T? GetItem<T>(string name) where T : Item {
-        return Global.I.GetItem<T>(items[name]);
+    public T? GetItem<T>(string path) where T : Item {
+        if (StringUtil.IsAbsItem(path)) {
+            throw new Exception();
+        }
+        var p2 = StringUtil.SplitItem(path, 2);
+        if (p2.Length == 2) {
+            return (items.GetValueOrDefault(p2[0], null) as Module)?.GetItem<T>(p2[1]);
+        } else {
+            return items.GetValueOrDefault(p2[0],null) as T;
+        }
     }
 
     public void AddItem(Item item) {
         item.ParentMod = this; // 必须先设置这个 FullName 依赖于这个属性
         var name = item.Name;
-        string fullName = item.FullName;
-        items.Add(name, fullName);
-        Global.I.AddItem(fullName, item);
+        items.Add(name, item);
     }
 
     public static Module CreateRootModule() {
-        var mod = new Module();
-
-        mod.thisname = StringUtil.RootModuleName;
+        var mod = new Module(null);
         mod.ParentMod = null;
 
         return mod;

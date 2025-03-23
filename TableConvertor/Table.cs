@@ -5,6 +5,9 @@ using System.Globalization;
 namespace TableConvertor;
 
 public class Table : Module {
+
+    public Table(string name) : base(name) { }
+
     public string[,] tableArr;
     public int[] headRange = [-1,-1];
     public int[] valueRange = [-1,-1];
@@ -25,10 +28,9 @@ public class Table : Module {
     //public override Module ParentMod { get => mod; set => mod = value; }
 
     public static Table CreateByCsv(string path) {
-        var table = new Table();
         var name = Path.GetFileNameWithoutExtension(path);
         name = StringUtil.TableName(name);
-        table.thisname = name;
+        var table = new Table(name);
 
         var config = new CsvConfiguration(CultureInfo.InvariantCulture) {
             HasHeaderRecord = false

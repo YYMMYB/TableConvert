@@ -1,3 +1,4 @@
+using CsvHelper.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,25 +11,24 @@ namespace TableConvertor;
 
 public class Global {
     public static Global I { get; } = new();
-    public Dictionary<string, Item> items = new();
     public Module root;
+
     static Global() {
         I = new();
         I.root = Module.CreateRootModule();
-        I.AddItem(I.root.FullName, I.root);
     }
 
     public Module GetOrCreateParentModules(string absPath) {
         if (!StringUtil.IsAbsItem(absPath)) {
             throw new Exception();
         }
-        var pathComp = StringUtil.SplitItem(absPath);
-        var mod = Global.I.GetItem<Module>(StringUtil.RootPath(absPath));
-        for (int i = 2; i < pathComp.Length - 1; i++) {
+        var path = StringUtil.AbsToRootLocal(absPath);
+        var pathComp = StringUtil.SplitItem(path);
+        var mod = root;
+        for (int i = 0; i < pathComp.Length - 1; i++) {
             var name = pathComp[i];
             if (mod.GetItem<Module>(name) == null) {
-                var ch = new Module();
-                ch.thisname = name;
+                var ch = new Module(name);
                 mod.AddItem(ch);
             }
             mod = mod.GetItem<Module>(name);
@@ -36,22 +36,13 @@ public class Global {
         return mod;
     }
 
-    public T? GetItem<T>(string path) where T : Item {
-        if (!items.ContainsKey(path)) {
-            return null;
-        } else {
-            return (T)items[path];
+    public T GetAbsItem<T>(string path) where T : Item {
+        if (!StringUtil.IsAbsItem(path)) {
+            throw new Exception();
         }
+        return Global.I.root.GetItem<T>(StringUtil.AbsToRootLocal(path));
     }
 
-    // 只给Module的AddItem用, 别的不要用
-    public void AddItem(string path, Item item) {
-        items.Add(path, item);
-    }
-
-    public bool ExistItem(string path) {
-        return items.ContainsKey(path);
-    }
 }
 
 
@@ -60,9 +51,23 @@ public class Global {
 // Table
 // 的父类, 用于统一存储, 防止重名
 public abstract class Item {
-    public abstract string Name { get; }
-    public abstract string FullName { get; }
-    public abstract Module? ParentMod { get; set; }
+    public string Name { get; set; }
+    public string FullName => GetPath();
+    public Module? ParentMod { get; set; }
+
+    public Item(string name) { Name = name; }
+
+    string _path;
+    public string GetPath() {
+        if (_path == null) {
+            if (ParentMod == null) {
+                _path = "";
+            } else {
+                _path = StringUtil.JoinItem(ParentMod.GetPath(), Name);
+            }
+        }
+        return _path;
+    }
 }
 
 
@@ -129,15 +134,14 @@ public static class StringUtil {
     public static string[] SplitItem(string s) {
         return s.Split(ItemSplitor);
     }
-    public static string RootPath(string s) {
-        var len = s.IndexOf('.', 1);
-        if (len == -1) {
-            len = s.Length;
-        }
-        return s.Substring(0, len);
+    public static string[] SplitItem(string s, int n) {
+        return s.Split(ItemSplitor, n);
     }
     public static bool IsAbsItem(string path) {
         return path.StartsWith(ItemSplitor);
+    }
+    public static string AbsToRootLocal(string absPath) {
+        return absPath.Substring(ItemSplitor.Length);
     }
     public static string ItemName(string path) {
         return path.Substring(path.LastIndexOf(ItemSplitor) + 1);

@@ -4,17 +4,10 @@ using System.Text.Json.Nodes;
 namespace TableConvertor;
 
 public class Type : Item {
-    public override string Name => thisname;
-    public override string FullName => module.CulcFullName(Name);
-    public override Module ParentMod { get => module; set => module = value; }
-
-    public Module module;
     public string thisname;
     public List<Constraint> constraints = new();
 
-    public Type(string name) {
-        this.module = module;
-        thisname = name;
+    public Type(string name) : base(name) {
     }
 
     public void AddConstraint(Constraint constraint) {

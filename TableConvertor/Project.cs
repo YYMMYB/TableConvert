@@ -34,8 +34,7 @@ public class Project {
     }
 
     public Module CreateModule(Module parent, string name) {
-        var mod = new Module();
-        mod.thisname = name;
+        var mod = new Module(name);
         parent.AddItem(mod);
         return mod;
     }

@@ -148,9 +148,17 @@ public class Head {
 
     public virtual Format CreateFormat() { throw new NotImplementedException(); }
 
-    public virtual string CreateType(string? mid) {
-        throw new NotImplementedException();
+    public virtual void CreateType(string? mid) {
+        CalcFullTypeName(mid);
+        if (Global.I.GetAbsItem<Type>(fullTypeName) != null) {
+            // todo 检验
+            return;
+        }
+        var typeMod = Global.I.GetOrCreateParentModules(fullTypeName);
+        CreateType2(mid, typeMod);
     }
+
+    protected virtual void CreateType2(string? mid, Module typeMod) { throw new NotImplementedException(); }
 
     public void CalcAutoName(string? mid) {
         string p = parent?.autoName ?? "";
@@ -246,15 +254,10 @@ public class ListHead : Head {
         return res;
     }
 
-    public override string CreateType(string? mid) {
-        CalcFullTypeName(mid);
-        if (Global.I.ExistItem(fullTypeName)) {
-            // todo 检验
-            return typeName;
-        }
-        var typeMod = Global.I.GetOrCreateParentModules(fullTypeName);
+    protected override void CreateType2(string? mid, Module typeMod) {
         // 必须先算value, 因为key可能会引用value的东西
-        var vt = valueHead.CreateType(null);
+        valueHead.CreateType(null);
+        var vt = valueHead.fullTypeName;
         if (type == "map") {
             string kt;
             if (keyHead is RefHead rkh) {
@@ -273,7 +276,6 @@ public class ListHead : Head {
         } else {
             throw new Exception();
         }
-        return typeName;
     }
 }
 
@@ -337,32 +339,23 @@ public class ObjectHead : Head {
         return res;
     }
 
-    public override string CreateType(string? mid) {
-        CalcFullTypeName(mid);
-        if (Global.I.ExistItem(fullTypeName)) {
-            // todo 检验
-            return typeName;
-        }
-
-        var typeMod = Global.I.GetOrCreateParentModules(fullTypeName);
+    protected override void CreateType2(string? mid, Module typeMod) {
         var fts = new Dictionary<string, string>();
         foreach (var f in fields) {
-            var t = f.CreateType(null);
-            fts.Add(f.name, t);
+            f.CreateType(null);
+            fts.Add(f.name, f.fullTypeName);
         }
         var ty = new ObjectType(typeName, null);
         typeMod.AddItem(ty);
 
         foreach (var (dn, d) in deriveds) {
-            var tn = d.CreateType(dn);
-            var t = Global.I.GetItem<ObjectType>(tn);
+            d.CreateType(dn);
+            var t = Global.I.GetAbsItem<ObjectType>(d.fullTypeName);
             if (t.baseType != null && t.baseType != fullTypeName) {
                 throw new Exception();
             }
             t.baseType = fullTypeName;
         }
-
-        return typeName;
     }
 }
 
@@ -403,14 +396,7 @@ public class SingleHead : Head {
         fullTypeName = Global.I.root.CulcFullName(type);
         typeName = StringUtil.ItemName(fullTypeName);
     }
-
-    public override string CreateType(string? mid) {
-        CalcFullTypeName(mid);
-        if (Global.I.ExistItem(fullTypeName)) {
-            // todo 检验
-            return typeName;
-        }
-        var typeMod = Global.I.GetOrCreateParentModules(fullTypeName);
+    protected override void CreateType2(string? mid, Module typeMod) {
         Type t;
         if (type == "string") {
             t = new StringType(typeName);
@@ -430,7 +416,6 @@ public class SingleHead : Head {
             throw new Exception();
         }
         typeMod.AddItem(t);
-        return typeName;
     }
 }
 
