@@ -340,12 +340,11 @@ public class ObjectHead : Head {
     }
 
     protected override void CreateType2(string? mid, Module typeMod) {
-        var fts = new Dictionary<string, string>();
+        var ty = new ObjectType(typeName, null);
         foreach (var f in fields) {
             f.CreateType(null);
-            fts.Add(f.name, f.fullTypeName);
+            ty.AddField(f.name, f.fullTypeName);
         }
-        var ty = new ObjectType(typeName, null);
         typeMod.AddItem(ty);
 
         foreach (var (dn, d) in deriveds) {
@@ -393,7 +392,7 @@ public class SingleHead : Head {
     public override void CalcFullTypeName(string? mid) {
         // todo 约束判断 无约束用全局的, 有约束用特殊的
         // 目前都没有约束, 所以先一直用全局的
-        fullTypeName = Global.I.root.CulcFullName(type);
+        fullTypeName = StringUtil.JoinItem(StringUtil.EngineModuleAbsPath, type);
         typeName = StringUtil.ItemName(fullTypeName);
     }
     protected override void CreateType2(string? mid, Module typeMod) {

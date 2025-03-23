@@ -9,8 +9,8 @@ public class Table : Module {
     public Table(string name) : base(name) { }
 
     public string[,] tableArr;
-    public int[] headRange = [-1,-1];
-    public int[] valueRange = [-1,-1];
+    public int[] headRange = [-1, -1];
+    public int[] valueRange = [-1, -1];
 
     public int[] ColRange => [1, tableArr.GetLength(1)];
 
@@ -19,13 +19,7 @@ public class Table : Module {
     public Format format;
     public RawValue rawValue;
 
-    //public string thisname;
-    //public override string Name => thisname;
-
-    //public override string FullName => ParentMod.CulcFullName(Name);
-
-    //Module mod;
-    //public override Module ParentMod { get => mod; set => mod = value; }
+    public Type RootType { get => Global.I.GetAbsItem<Type>(head.fullTypeName); }
 
     public static Table CreateByCsv(string path) {
         var name = Path.GetFileNameWithoutExtension(path);

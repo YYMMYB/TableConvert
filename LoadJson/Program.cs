@@ -8,6 +8,7 @@ using System.Text.Unicode;
 
 var cfg = new JsonSerializerOptions() {
     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    IncludeFields = true,
 };
 cfg.Converters.Add(new JsonStringEnumConverter());
 

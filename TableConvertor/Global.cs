@@ -211,6 +211,10 @@ public static class StringUtil {
         return name;
     }
 
-    public static string RootModuleName = KeywordPrefix;
+    public static string EngineModuleName = "Engine";
+    public static string EngineModuleAbsPath = StringUtil.JoinItem("", StringUtil.EngineModuleName);
+
+    public static string CodeKeywordPrefix = "_";
+
 }
 

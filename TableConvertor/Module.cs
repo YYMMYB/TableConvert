@@ -11,6 +11,7 @@ public class Module : Item {
 
     public Dictionary<string, Item> items = new();
 
+    public bool IsEngineModule => FullName == StringUtil.EngineModuleAbsPath;
 
     public string CulcFullName(string name) {
         return StringUtil.JoinItem(GetPath(), name);
