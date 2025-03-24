@@ -47,6 +47,7 @@ public class CodeGen {
                     WriteIndented = true,
                     AllowOutOfOrderMetadataProperties = true,
                     Converters = {
+                        new JsonStringEnumConverter(),
                         new DictionaryTKeyObjectTValueConverter()
                     }
                 };
@@ -215,26 +216,26 @@ public class CodeGen {
                 if (ty is ObjectType oty) {
                     var s_name = NameToCode(rootNmspace, name);
                     var path = Path.Join(folder, $"{s_name}.cs");
-                    using (var f = new StreamWriter(path)) {
 
-                        string s_baseType;
-                        StringBuilder s_baseTypeAttr = new StringBuilder();
-                        if (oty.baseType == null) {
-                            s_baseType = null;
-                            TypeDiscriminatorAttr(s_baseTypeAttr, oty, null);
-                        } else {
-                            s_baseType = $$""": {{rootNmspace}}{{oty.baseType}}""";
+                    string s_baseType;
+                    StringBuilder s_baseTypeAttr = new StringBuilder();
+                    if (oty.baseType == null) {
+                        s_baseType = null;
+                        TypeDiscriminatorAttr(s_baseTypeAttr, oty, null);
+                    } else {
+                        s_baseType = $$""": {{rootNmspace}}{{oty.baseType}}""";
 
-                        }
+                    }
 
-                        var s_fields = new StringBuilder();
-                        foreach (var (fname, fty) in oty.fields) {
-                            var s_fty = TypeToCode(rootNmspace, fty);
-                            s_fields.AppendLine($$"""
+                    var s_fields = new StringBuilder();
+                    foreach (var (fname, fty) in oty.fields) {
+                        var s_fty = TypeToCode(rootNmspace, fty);
+                        s_fields.AppendLine($$"""
                                     public {{s_fty}} {{fname}};
                                 """);
-                        }
+                    }
 
+                    using (var f = new StreamWriter(path)) {
                         f.Write($$"""
                             using System.Text.Json.Serialization;
 
@@ -247,7 +248,26 @@ public class CodeGen {
 
                             }
                             """);
+                    }
+                } else if (ty is EnumType ety) {
+                    var s_name = NameToCode(rootNmspace, name);
+                    var path = Path.Join(folder, $"{s_name}.cs");
+                    var s_variant = new StringBuilder();
+                    foreach (var v in ety.variants) {
+                        s_variant.AppendLine($"""
+                                {v},
+                            """);
+                    }
+                    using (var f = new StreamWriter(path)) {
+                        f.Write($$"""
+                            using System.Text.Json.Serialization;
 
+                            namespace {{rootNmspace}}{{nmspace}};
+
+                            public enum {{s_name}} {
+                            {{s_variant}}
+                            }
+                            """);
                     }
                 }
             } else if (i is Module m) {

@@ -27,7 +27,9 @@ public class Head {
         Head head;
 
         if (raw.isVertical) {
-            head = new ObjectHead();
+            var head1 = new ObjectHead();
+            head1.type = (parent as ObjectHead).type;
+            head = head1;
             var s = StringUtil.TryVarient(raw.content);
             var s2 = StringUtil.SplitWhite(s!);
             head.name = s2[0];
@@ -42,7 +44,9 @@ public class Head {
 
             if (t == null) {
                 if (raw.children.Count > 0) {
-                    head = new ObjectHead();
+                    var head1 = new ObjectHead();
+                    head1.type = "object";
+                    head = head1;
                 } else {
                     head = new SingleHead();
                 }
@@ -53,6 +57,7 @@ public class Head {
                     head = head1;
                 } else if (IsObject(t)) {
                     var head1 = new ObjectHead();
+                    head1.type = StringUtil.TypeName(t);
                     head = head1;
                 } else if (IsSingle(t)) {
                     var head1 = new SingleHead();
@@ -124,10 +129,13 @@ public class Head {
         return StringUtil.Type_List.Contains(s) || StringUtil.Type_Map.Contains(s);
     }
     public static bool IsObject(string s) {
-        return StringUtil.Type_Object.Contains(s);
+        return false
+            || StringUtil.Type_Object.Contains(s)
+            || StringUtil.Type_Enum.Contains(s)
+            ;
     }
     public static bool IsSingle(string s) {
-        return StringUtil.Type_Enum.Contains(s)
+        return false
             || StringUtil.Type_Bool.Contains(s)
             || StringUtil.Type_Int.Contains(s)
             || StringUtil.Type_Float.Contains(s)
@@ -280,6 +288,8 @@ public class ListHead : Head {
 }
 
 public class ObjectHead : Head {
+    public string type;
+
     public List<Head> fields = new();
 
     public Head? baseHead;
@@ -296,71 +306,96 @@ public class ObjectHead : Head {
     }
 
     public override JsonNode Read(RawValue raw) {
-        var lraw = (raw as ListRawValue)!;
-        JsonObject node;
-        if (deriveds.Count != 0) {
-            var sw = (lraw.list.Last() as ListRawValue)!;
-            string derivedName = sw.list[0].Lit();
-            node = (deriveds[derivedName].Read(sw.list[1]) as JsonObject)!;
-            var chDis = ((string?)node[StringUtil.TypeFieldName]?.AsValue());
-            if (!node.ContainsKey(StringUtil.TypeFieldName)) {
-                node.Insert(0, StringUtil.TypeFieldName, null);
+        if (type == "object") {
+            var lraw = (raw as ListRawValue)!;
+            JsonObject node;
+            if (deriveds.Count != 0) {
+                var sw = (lraw.list.Last() as ListRawValue)!;
+                string derivedName = sw.list[0].Lit();
+                node = (deriveds[derivedName].Read(sw.list[1]) as JsonObject)!;
+                var chDis = ((string?)node[StringUtil.TypeFieldName]?.AsValue());
+                if (!node.ContainsKey(StringUtil.TypeFieldName)) {
+                    node.Insert(0, StringUtil.TypeFieldName, null);
+                }
+                node[StringUtil.TypeFieldName] = StringUtil.JoinDiscriminator(derivedName, chDis);
+                //if (node.ContainsKey(StringUtil.FirstFieldName)) {
+                //    node[StringUtil.TypeFieldName] = derivedName;
+                //    node.Remove(StringUtil.FirstFieldName);
+                //}
+            } else {
+                node = new JsonObject();
+                //node.Add(StringUtil.FirstFieldName, null);
             }
-            node[StringUtil.TypeFieldName] = StringUtil.JoinDiscriminator(derivedName, chDis);
-            //if (node.ContainsKey(StringUtil.FirstFieldName)) {
-            //    node[StringUtil.TypeFieldName] = derivedName;
-            //    node.Remove(StringUtil.FirstFieldName);
-            //}
+
+            for (int i = 0; i < fields.Count; i++) {
+                var v = fields[i].Read(lraw.Get(i));
+                RemoveHelperField(v);
+                node.Add(fields[i].name, v);
+            }
+            return node;
+        } else if (type == "enum") {
+            return JsonValue.Create(raw.Lit());
         } else {
-            node = new JsonObject();
-            //node.Add(StringUtil.FirstFieldName, null);
+            throw new Exception();
         }
 
-        for (int i = 0; i < fields.Count; i++) {
-            var v = fields[i].Read(lraw.Get(i));
-            RemoveHelperField(v);
-            node.Add(fields[i].name, v);
-        }
-        return node;
     }
 
     public override Format CreateFormat() {
-        var l = new List<Format>();
-        foreach (var f in fields) {
-            l.Add(f.CreateFormat());
-        }
-        if (deriveds.Count != 0) {
-            var d = new Dictionary<string, Format>();
-            foreach (var (k, h) in deriveds) {
-                var f = h.CreateFormat();
-                d.Add(k, f);
+        if (type == "object") {
+            var l = new List<Format>();
+            foreach (var f in fields) {
+                l.Add(f.CreateFormat());
             }
-            var sw = new SwitchFormat(d);
-            sw.colRange = [switchCol, colRange[1]];
-            l.Add(sw);
+            if (deriveds.Count != 0) {
+                var d = new Dictionary<string, Format>();
+                foreach (var (k, h) in deriveds) {
+                    var f = h.CreateFormat();
+                    d.Add(k, f);
+                }
+                var sw = new SwitchFormat(d);
+                sw.colRange = [switchCol, colRange[1]];
+                l.Add(sw);
+            }
+            var res = new HFormat(l);
+            res.colRange = colRange;
+            return res;
+        } else if (type == "enum") {
+            var res = new SingleFormat();
+            res.colRange = colRange;
+            return res;
+        } else {
+            throw new Exception();
         }
-        var res = new HFormat(l);
-        res.colRange = colRange;
-        return res;
     }
 
     protected override void CreateType2(string? mid, Module typeMod) {
-        var ty = new ObjectType(typeName, null);
-        foreach (var f in fields) {
-            f.CreateType(null);
-            ty.AddField(f.name, f.fullTypeName);
-        }
-        typeMod.AddItem(ty);
-
-        foreach (var (dn, d) in deriveds) {
-            d.CreateType(dn);
-            var t = Global.I.GetAbsItem<ObjectType>(d.fullTypeName);
-            if (t.baseType != null && t.baseType != fullTypeName) {
-                throw new Exception();
+        if (type == "object") {
+            var ty = new ObjectType(typeName, null);
+            foreach (var f in fields) {
+                f.CreateType(null);
+                ty.AddField(f.name, f.fullTypeName);
             }
-            t.baseType = fullTypeName;
-            t.discriminator = dn;
-            ty.derivedType.Add(dn, d.fullTypeName);
+            typeMod.AddItem(ty);
+
+            foreach (var (dn, d) in deriveds) {
+                d.CreateType(dn);
+                var t = Global.I.GetAbsItem<ObjectType>(d.fullTypeName);
+                if (t.baseType != null && t.baseType != fullTypeName) {
+                    throw new Exception();
+                }
+                t.baseType = fullTypeName;
+                t.discriminator = dn;
+                ty.derivedType.Add(dn, d.fullTypeName);
+            }
+        } else if (type == "enum") {
+            var ty = new EnumType(typeName);
+            foreach (var (dn, d) in deriveds) {
+                ty.AddVariant(dn);
+            }
+            typeMod.AddItem(ty);
+        } else {
+            throw new Exception();
         }
     }
 }
@@ -412,10 +447,6 @@ public class SingleHead : Head {
             t = new IntType(typeName);
         } else if (type == "bool") {
             t = new BoolType(typeName);
-        } else if (type == "enum") {
-            // todo enum
-            t = new EnumType(typeName);
-            //throw new Exception();
         } else if (type == null) {
             throw new Exception();
         } else {
