@@ -237,7 +237,7 @@ public class ListHead : Head {
     }
 
     public string ConvertToKey(JsonNode node) {
-        var s = node.ToJsonString(StringUtil.JsonOpt);
+        var s = node.ToJsonString(StringUtil.JsonKeyOpt);
         return s;
     }
 

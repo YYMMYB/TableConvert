@@ -187,23 +187,23 @@ public class CodeGen {
                 if (i is Table t) {
                     var typeCode = TypeToCode(rootNmspace, t.RootType.FullName);
                     s_tableLoadCode_m.AppendLine($$"""
-using (var r = File.OpenRead(Path.Join(folder, "{{name}}.json"))) {
-    tables.{{name}} = JsonSerializer.Deserialize<{{typeCode}}>(r, {{rootNmspace}}{{StringUtil.CodeUtilsModuleAbsPath}}.Util.Options);
-}
-""");
+                                using (var r = File.OpenRead(Path.Join(folder, "{{name}}.json"))) {
+                                    tables.{{name}} = JsonSerializer.Deserialize<{{typeCode}}>(r, {{rootNmspace}}{{StringUtil.CodeUtilsModuleAbsPath}}.Util.Options);
+                                }
+                        """);
 
                     s_fields_m.AppendLine($$"""
-public {{typeCode}} {{name}};
-""");
+                            public {{typeCode}} {{name}};
+                        """);
                 } else if (i is Module m) {
                     var chTables = StringUtil.JoinItem(NameToCode(rootNmspace, m.FullName), tablesName);
                     s_nmspaceLoadCode_m.AppendLine($$"""
-tables.{{name}} = {{chTables}}.load(Path.Join(folder, "{{name}}"));
-""");
+                                tables.{{name}} = {{chTables}}.load(Path.Join(folder, "{{name}}"));
+                        """);
 
                     s_fields_m.AppendLine($$"""
-public {{name}}.{{tablesName}} {{name}};
-""");
+                            public {{chTables}} {{name}};
+                        """);
                 }
             }
 
@@ -259,36 +259,36 @@ public {{name}}.{{tablesName}} {{name}};
             }
         }
 
+        if (!(mod is Table)) {
 
-        var tablePath = Path.Join(folder, tablesName + ".cs");
-        using (var f = new StreamWriter(tablePath)) {
+            var tablePath = Path.Join(folder, tablesName + ".cs");
+            using (var f = new StreamWriter(tablePath)) {
+                f.Write($$"""
+                    using System.Text.Json;
+                    using System.Text.Encodings.Web;
+                    using {{rootNmspace}}{{StringUtil.CodeUtilsModuleAbsPath}};
 
 
-            f.Write($$"""
-using System.Text.Json;
-using System.Text.Encodings.Web;
-using {{rootNmspace}}{{StringUtil.CodeUtilsModuleAbsPath}};
+                    namespace {{rootNmspace}}{{nmspace_m}};
 
+                    public class {{tablesName}} {
 
-namespace {{rootNmspace}}{{nmspace_m}};
+                    {{s_fields_m}}
 
-public class {{tablesName}} {
+                        public static {{tablesName}} load(string folder) {
+                            var tables = new {{tablesName}}();
 
-{{s_fields_m}}
+                            // 命名空间的读取
+                    {{s_nmspaceLoadCode_m}}
 
-    public static {{tablesName}} load(string folder) {
-        var tables = new {{tablesName}}();
+                            // 表的读取
+                    {{s_tableLoadCode_m}}
 
-        // 命名空间的读取
-{{s_nmspaceLoadCode_m}}
-
-        // 表的读取
-{{s_tableLoadCode_m}}
-
-        return tables;
-    }
-}
-""");
+                            return tables;
+                        }
+                    }
+                    """);
+            }
         }
     }
 

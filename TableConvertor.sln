@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TableConvertor", "TableConv
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{BA6A269B-E425-407A-B169-34DD50E6BAEE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenTest", "GenTest\GenTest.csproj", "{ADAD4356-5484-4379-BDD8-DBA9CCB9A767}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenTest", "GenTest\GenTest.csproj", "{36282BA2-2892-4774-9DC7-C03E561DD2EC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +23,10 @@ Global
 		{BA6A269B-E425-407A-B169-34DD50E6BAEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BA6A269B-E425-407A-B169-34DD50E6BAEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BA6A269B-E425-407A-B169-34DD50E6BAEE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ADAD4356-5484-4379-BDD8-DBA9CCB9A767}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ADAD4356-5484-4379-BDD8-DBA9CCB9A767}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ADAD4356-5484-4379-BDD8-DBA9CCB9A767}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ADAD4356-5484-4379-BDD8-DBA9CCB9A767}.Release|Any CPU.Build.0 = Release|Any CPU
+		{36282BA2-2892-4774-9DC7-C03E561DD2EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36282BA2-2892-4774-9DC7-C03E561DD2EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36282BA2-2892-4774-9DC7-C03E561DD2EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36282BA2-2892-4774-9DC7-C03E561DD2EC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

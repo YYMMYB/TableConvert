@@ -76,6 +76,9 @@ public static class StringUtil {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         WriteIndented = true,
     };
+    public static JsonSerializerOptions JsonKeyOpt = new JsonSerializerOptions() {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 
     public static string Constraint = "builtin.constraint";
     public static Dictionary<string, string> attrs = new Dictionary<string, string>() {
