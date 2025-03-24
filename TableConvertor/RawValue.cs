@@ -26,6 +26,10 @@ public record class RawValue  {
         throw new NotImplementedException();
     }
 
+    public virtual string Lit() {
+        throw new NotImplementedException();
+    }
+
 }
 
 public record class LiteralRawValue : RawValue {
@@ -38,6 +42,9 @@ public record class LiteralRawValue : RawValue {
     //    return new LiteralValue(lit);
     //}
 
+    public override string Lit() {
+        return lit;
+    }
 
     public override JsonNode ToJson() {
         return JsonValue.Create(lit);

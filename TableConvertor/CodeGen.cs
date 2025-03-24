@@ -27,7 +27,6 @@ public class CodeGen {
         var utilsPath = Path.Join(rootFolder, StringUtil.ItemNameToSystemPath(StringUtil.CodeUtilsModuleAbsPath));
         Directory.CreateDirectory(utilsPath);
 
-
         var s_util = $$"""
             using System;
             using System.Collections.Generic;
@@ -45,6 +44,8 @@ public class CodeGen {
                 public static JsonSerializerOptions Options = new JsonSerializerOptions() {
                     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
                     IncludeFields = true,
+                    WriteIndented = true,
+                    AllowOutOfOrderMetadataProperties = true,
                     Converters = {
                         new DictionaryTKeyObjectTValueConverter()
                     }
@@ -156,14 +157,14 @@ public class CodeGen {
                 }
             }
             """;
-    
-        using(var w = new StreamWriter(Path.Join(utilsPath, "Util.cs"))) {
+
+        using (var w = new StreamWriter(Path.Join(utilsPath, "Util.cs"))) {
             w.WriteLine(s_util);
         }
     }
 
     protected void GenRec(Module mod, string folder) {
-        if(mod.FullName==StringUtil.CodeUtilsModuleAbsPath) {
+        if (mod.FullName == StringUtil.CodeUtilsModuleAbsPath) {
             throw new Exception();
         }
 
@@ -215,31 +216,38 @@ public {{name}}.{{tablesName}} {{name}};
                     var s_name = NameToCode(rootNmspace, name);
                     var path = Path.Join(folder, $"{s_name}.cs");
                     using (var f = new StreamWriter(path)) {
-                        {
-                            string s_baseType;
-                            if (oty.baseType == null) {
-                                s_baseType = null;
-                            } else {
-                                s_baseType = $$""": {{rootNmspace}}{{oty.baseType}}""";
-                            }
 
-                            var s_fields = new StringBuilder();
-                            foreach (var (fname, fty) in oty.fields) {
-                                var s_fty = TypeToCode(rootNmspace, fty);
-                                s_fields.AppendLine($$"""public {{s_fty}} {{fname}};""");
-                            }
+                        string s_baseType;
+                        StringBuilder s_baseTypeAttr = new StringBuilder();
+                        if (oty.baseType == null) {
+                            s_baseType = null;
+                            TypeDiscriminatorAttr(s_baseTypeAttr, oty, null);
+                        } else {
+                            s_baseType = $$""": {{rootNmspace}}{{oty.baseType}}""";
 
-                            f.Write($$"""
-namespace {{rootNmspace}}{{nmspace}};
-
-public class {{s_name}} {{s_baseType}} {
-
-{{s_fields}}
-
-}
-
-""");
                         }
+
+                        var s_fields = new StringBuilder();
+                        foreach (var (fname, fty) in oty.fields) {
+                            var s_fty = TypeToCode(rootNmspace, fty);
+                            s_fields.AppendLine($$"""
+                                    public {{s_fty}} {{fname}};
+                                """);
+                        }
+
+                        f.Write($$"""
+                            using System.Text.Json.Serialization;
+
+                            namespace {{rootNmspace}}{{nmspace}};
+
+                            {{s_baseTypeAttr}}
+                            public class {{s_name}} {{s_baseType}} {
+
+                            {{s_fields}}
+
+                            }
+                            """);
+
                     }
                 }
             } else if (i is Module m) {
@@ -309,6 +317,19 @@ public class {{tablesName}} {
             return $"Dictionary<{k}, {v}>";
         } else {
             return NameToCode(rootNmspace, typeFullName);
+        }
+    }
+
+    public void TypeDiscriminatorAttr(StringBuilder sb, ObjectType ty, string? parent) {
+        var derivedDis = new List<string>();
+        var derivedName = new List<string>();
+        foreach (var (dn, d) in ty.derivedType) {
+            string dis = StringUtil.JoinDiscriminator(parent, dn);
+            var attr = $"""
+                [JsonDerivedType(typeof({NameToCode(rootNmspace, d)}), typeDiscriminator: "{dis}")]
+                """;
+            sb.AppendLine(attr);
+            TypeDiscriminatorAttr(sb, Global.I.GetAbsItem<ObjectType>(d), dis);
         }
     }
 }

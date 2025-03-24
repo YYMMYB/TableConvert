@@ -28,6 +28,20 @@ public class Project {
                 throw new Exception();
             }
         }
+
+        //PostLoad(Global.I.root);
+    }
+
+    public void PostLoad(Module m) {
+        foreach (var (name, i) in m.items) {
+            if (i is ObjectType ot) {
+                if (ot.baseType != null) {
+                    var bt = Global.I.GetAbsItem<ObjectType>(ot.baseType);
+                }
+            } else if (i is Module) {
+                PostLoad(i as Module);
+            }
+        }
     }
 
     public Module CreateModule(Module parent, string name) {

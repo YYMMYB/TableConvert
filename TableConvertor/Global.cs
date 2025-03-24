@@ -74,6 +74,7 @@ public abstract class Item {
 public static class StringUtil {
     public static JsonSerializerOptions JsonOpt = new JsonSerializerOptions() {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        WriteIndented = true,
     };
 
     public static string Constraint = "builtin.constraint";
@@ -222,5 +223,13 @@ public static class StringUtil {
         return name.Replace(ItemSplitor, "/");
     }
 
+    public static string DiscriminatorConnector = "_";
+    public static string JoinDiscriminator(params string[] parts) {
+        var ls = new List<string>();
+        foreach (var part in parts) {
+            if (part != null) ls.Add(part);
+        }
+        return string.Join(DiscriminatorConnector, ls);
+    }
 }
 

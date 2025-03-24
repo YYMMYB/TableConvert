@@ -58,8 +58,10 @@ public class MapType : Type {
 }
 
 public class ObjectType : Type {
+    public string discriminator;
     public Dictionary<string, string> fields = new();
     public string? baseType;
+    public Dictionary<string, string> derivedType = new();
 
     public ObjectType(string name, string? baseType) : base(name) {
         this.baseType = baseType;

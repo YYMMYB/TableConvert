@@ -142,7 +142,7 @@ public class Head {
 
     public static void RemoveHelperField(JsonNode node) {
         if (node is JsonObject onode) {
-            onode.Remove(StringUtil.FirstFieldName);
+            //onode.Remove(StringUtil.FirstFieldName);
         }
     }
 
@@ -300,15 +300,20 @@ public class ObjectHead : Head {
         JsonObject node;
         if (deriveds.Count != 0) {
             var sw = (lraw.list.Last() as ListRawValue)!;
-            string derivedName = (sw.list[0] as LiteralRawValue)!.lit;
+            string derivedName = sw.list[0].Lit();
             node = (deriveds[derivedName].Read(sw.list[1]) as JsonObject)!;
-            if (node.ContainsKey(StringUtil.FirstFieldName)) {
-                node[StringUtil.TypeFieldName] = derivedName;
-                node.Remove(StringUtil.FirstFieldName);
+            var chDis = ((string?)node[StringUtil.TypeFieldName]?.AsValue());
+            if (!node.ContainsKey(StringUtil.TypeFieldName)) {
+                node.Insert(0, StringUtil.TypeFieldName, null);
             }
+            node[StringUtil.TypeFieldName] = StringUtil.JoinDiscriminator(derivedName, chDis);
+            //if (node.ContainsKey(StringUtil.FirstFieldName)) {
+            //    node[StringUtil.TypeFieldName] = derivedName;
+            //    node.Remove(StringUtil.FirstFieldName);
+            //}
         } else {
             node = new JsonObject();
-            node.Add(StringUtil.FirstFieldName, null);
+            //node.Add(StringUtil.FirstFieldName, null);
         }
 
         for (int i = 0; i < fields.Count; i++) {
@@ -354,6 +359,8 @@ public class ObjectHead : Head {
                 throw new Exception();
             }
             t.baseType = fullTypeName;
+            t.discriminator = dn;
+            ty.derivedType.Add(dn, d.fullTypeName);
         }
     }
 }
