@@ -48,7 +48,9 @@ public class Head {
                     head1.type = "object";
                     head = head1;
                 } else {
-                    head = new SingleHead();
+                    var head1 = new SingleHead();
+                    head1.type = "string";
+                    head = head1;
                 }
             } else {
                 if (IsList(t)) {
@@ -210,19 +212,15 @@ public class ListHead : Head {
         for (int i = 0; i < count; i++) {
             JsonNode v;
             JsonNode k = null;
-            if (keyHead == null || keyHead is RefHead) {
+            if (keyHead == null) {
                 v = valueHead.Read(lraw.Get(i).Get(0));
+            } else if (keyHead is RefHead rkh) {
+                var kh = rkh.Target(valueHead);
+                k = kh.Read(lraw.Get(i).Get(0));
+                v = valueHead.Read(lraw.Get(i).Get(1));
             } else {
                 k = keyHead.Read(lraw.Get(i).Get(0));
                 v = valueHead.Read(lraw.Get(i).Get(1));
-            }
-
-            if (keyHead is RefHead rkeyHead) {
-                JsonNode obj = v;
-                foreach (var key in rkeyHead.r) {
-                    obj = obj[key!]!;
-                }
-                k = obj;
             }
 
             if (type == "map") {
@@ -251,8 +249,11 @@ public class ListHead : Head {
 
     public override Format CreateFormat() {
         HFormat h;
-        if (keyHead == null || keyHead is RefHead) {
+        if (keyHead == null) {
             h = new HFormat(valueHead.CreateFormat());
+        } else if (keyHead is RefHead rkh) {
+            var k = rkh.Target(valueHead);
+            h = new HFormat(k.CreateFormat(), valueHead.CreateFormat());
         } else {
             h = new HFormat(keyHead.CreateFormat(), valueHead.CreateFormat());
         }
@@ -460,6 +461,9 @@ public class RefHead : Head {
     public string[] r;
 
     public Head Target(Head root) {
+        while(root is ListHead lh) {
+            root = lh.valueHead;
+        }
         foreach (var n in r) {
             root = (root as ObjectHead).FieldByName(n);
         }
