@@ -1,10 +1,10 @@
 ,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,
 $,   表:map,,,,,,,,,,,,,,,,
-,_    :r   id   ,_:   o  值,,,,,,,,,,,,,,,
-,,  id  ,,nested : map,,,custom,,,,,| magic,energe: i,| fire FireMagic,"boomRange : o 
+,_    :r   key  ,_:   o  值,,,,,,,,,,,,,,,
+,,  key,,nested : map,,,custom,,,,,| magic,energe: i,| fire FireMagic,"boomRange : o 
  .Shape",,
-,,n :i ,  name  :  s,$key : s,$value : map,,pos : o .Vector2,,skill_info,,,,,,| circle .Circle,r : i,
+,, id : i,  name  :  s,$key : s,$value : map,,pos : o .Vector2,,skill_info,,,,,,| circle .Circle,r : i,
 ,,,,,_ : s,_ : list,x : i,y : i,id : i,p,,,,,| box .Box,w: i,h: i
 ,,,,,,_ : s,,,,time: f,dmg: i,,,| cold ColdMagic,time : i,,
 ,,,,,,,,,,,,| warrior,defense : i,,,,
