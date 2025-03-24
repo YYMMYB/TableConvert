@@ -78,7 +78,7 @@ public record class RawHead {
         var meetVarient = false;
         var chRow = areaStartRow;
         var chCol = areaStartCol;
-        do {
+        while (chCol < areaEndCol) {
             var cell = table[chRow, chCol];
             // todo 优化 根据格式要求 不需要每次都检查, 只检查最后一列即可
             if (StringUtil.TryVarient(cell) != null) {
@@ -89,18 +89,18 @@ public record class RawHead {
             var node = AddChild([chRow, areaEndRow], [chCol, chEndCol]);
             node.Read();
             chCol = chEndCol;
-        } while (chCol < areaEndCol);
+        }
 
         horizontalCount = children.Count;
 
         if (meetVarient) {
-            do {
+            while (chRow < areaEndRow) {
                 var chEndRow = NextNonAttr(chCol, chRow, areaEndRow);
                 var node = AddChild([chRow, chEndRow], [chCol, areaEndCol]);
                 node.isVertical = true;
                 node.Read();
                 chRow = chEndRow;
-            } while (chRow < areaEndRow);
+            }
         }
 
         return areaStartCol;

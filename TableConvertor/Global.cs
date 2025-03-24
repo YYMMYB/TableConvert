@@ -213,8 +213,14 @@ public static class StringUtil {
 
     public static string EngineModuleName = "Engine";
     public static string EngineModuleAbsPath = StringUtil.JoinItem("", StringUtil.EngineModuleName);
+    public static string CodeUtilModuleName = "Utils";
+    public static string CodeUtilsModuleAbsPath = StringUtil.JoinItem("", StringUtil.CodeUtilModuleName);
 
     public static string CodeKeywordPrefix = "_";
+
+    public static string ItemNameToSystemPath(string name) {
+        return name.Replace(ItemSplitor, "/");
+    }
 
 }
 
