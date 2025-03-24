@@ -12,4 +12,8 @@
     <PackageReference Include="CsvHelper" Version="33.0.1" />
   </ItemGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="call after_build.bat $(ProjectDir)$(OutDir)" />
+  </Target>
+
 </Project>

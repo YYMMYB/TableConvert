@@ -35,3 +35,4 @@ var dg = new DataGen(Global.I.root, dataPath);
 dg.Gen(dg.rootMod, dg.rootFolder);
 var cg = new CodeGen(Global.I.root, codePath);
 cg.Gen();
+
