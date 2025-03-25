@@ -207,8 +207,10 @@ public class CodeGen {
                 if (i is Table t) {
                     var typeCode = TypeToCode(rootNmspace, t.RootType.FullName);
                     s_tableLoadCode_m.AppendLine($$"""
+                                {
                                 var s = access.GetString(access.JoinPath(folder, "{{name}}.json"));
-                                    tables.{{name}} = JsonSerializer.Deserialize<{{typeCode}}>(s, {{rootNmspace}}{{StringUtil.CodeUtilsModuleAbsPath}}.Util.Options);
+                                tables.{{name}} = JsonSerializer.Deserialize<{{typeCode}}>(s, {{rootNmspace}}{{StringUtil.CodeUtilsModuleAbsPath}}.Util.Options);
+                                }
                         """);
 
                     s_fields_m.AppendLine($$"""
