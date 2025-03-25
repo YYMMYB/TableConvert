@@ -112,3 +112,8 @@ public record class DataPath : IDataPath {
 }
 ```
 
+# 温馨提示
+
+- 用 excel 编辑csv, 要注意编码格式, 我需要 UTF8 的, excel 是 GBK 的
+  我推荐用 LibreOffice, 免费开源干净.
+  或者去vscode里随便找个 csv 的编辑插件也行.
