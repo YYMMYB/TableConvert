@@ -176,10 +176,10 @@ public class CodeGen {
             """;
 
         using (var w = new StreamWriter(Path.Join(utilsPath, "Util.cs"))) {
-            w.WriteLine(s_util);
+            WriteToFile(w, s_util);
         }
         using (var w = new StreamWriter(Path.Join(utilsPath, "IDataAccess.cs"))) {
-            w.WriteLine(s_DataAccess);
+            WriteToFile(w, s_DataAccess);
         }
     }
 
@@ -256,7 +256,7 @@ public class CodeGen {
                     }
 
                     using (var f = new StreamWriter(path)) {
-                        f.Write($$"""
+                        var s = $$"""
                             using System.Text.Json.Serialization;
 
                             namespace {{rootNmspace}}{{nmspace}};
@@ -267,7 +267,8 @@ public class CodeGen {
                             {{s_fields}}
 
                             }
-                            """);
+                            """;
+                        WriteToFile(f, s);
                     }
                 } else if (ty is EnumType ety) {
                     var s_name = NameToCode(rootNmspace, name);
@@ -279,7 +280,7 @@ public class CodeGen {
                             """);
                     }
                     using (var f = new StreamWriter(path)) {
-                        f.Write($$"""
+                        var s = $$"""
                             using System.Text.Json.Serialization;
 
                             namespace {{rootNmspace}}{{nmspace}};
@@ -287,7 +288,8 @@ public class CodeGen {
                             public enum {{s_name}} {
                             {{s_variant}}
                             }
-                            """);
+                            """;
+                        WriteToFile(f, s);
                     }
                 }
             } else if (i is Module m) {
@@ -303,7 +305,7 @@ public class CodeGen {
 
             var tablePath = Path.Join(folder, tablesName + ".cs");
             using (var f = new StreamWriter(tablePath)) {
-                f.Write($$"""
+                var s = $$"""
                     using System.Text.Json;
                     using System.Text.Encodings.Web;
                     using System.Collections.Generic;
@@ -328,7 +330,8 @@ public class CodeGen {
                             return tables;
                         }
                     }
-                    """);
+                    """;
+                WriteToFile(f, s);
             }
         }
     }
@@ -372,6 +375,11 @@ public class CodeGen {
             sb.AppendLine(attr);
             TypeDiscriminatorAttr(sb, Global.I.GetAbsItem<ObjectType>(d), dis);
         }
+    }
+
+    public void WriteToFile(StreamWriter f, string s) {
+        s = s.ReplaceLineEndings("\n");
+        f.Write(s);
     }
 }
 

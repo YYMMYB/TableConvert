@@ -8,8 +8,10 @@ string outPath;
 string dataPath;
 string codePath;
 
-
 string root;
+
+
+
 if (args.Length == 1) {
     root = args[0];
     outPath = Path.Join(Environment.CurrentDirectory, "out");

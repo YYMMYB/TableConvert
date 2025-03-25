@@ -23,7 +23,7 @@ public class DataGen {
                 var path = Path.Join(folder, $"{name}.json");
                 var jn = t.head.Read(t.rawValue);
                 using (var f = new StreamWriter(path)) {
-                    f.Write(JsonSerializer.Serialize(jn, StringUtil.JsonOpt));
+                    WriteToFile(f, JsonSerializer.Serialize(jn, StringUtil.JsonOpt));
                 }
             } else if (i is Module m) {
                 var path = Path.Join(folder, name);
@@ -31,5 +31,10 @@ public class DataGen {
             } else {
             }
         }
+    }
+
+    public void WriteToFile(StreamWriter f, string s) {
+        s = s.ReplaceLineEndings("\n");
+        f.Write(s);
     }
 }
