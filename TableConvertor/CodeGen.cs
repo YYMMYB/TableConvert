@@ -27,6 +27,19 @@ public class CodeGen {
         var utilsPath = Path.Join(rootFolder, StringUtil.ItemNameToSystemPath(StringUtil.CodeUtilsModuleAbsPath));
         Directory.CreateDirectory(utilsPath);
 
+        var s_DataAccess = $$"""
+            using System.IO;
+            
+            public interface IDataAccess {
+                Stream GetString(IDataPath path);
+                IDataPath JoinPath(IDataPath path, string item);
+            }
+
+            public interface IDataPath {
+
+            }
+            """;
+
         var s_util = $$"""
             using System;
             using System.Collections.Generic;
@@ -45,7 +58,10 @@ public class CodeGen {
                     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
                     IncludeFields = true,
                     WriteIndented = true,
-                    AllowOutOfOrderMetadataProperties = true,
+                    // 似乎 .net 9 才支持这个选项, godot 还没法用. 
+                    // 不过我已经调整过 $type 的位置, 到最开头了
+                    // 所以没关系, 之前加是为了预防意外
+                    // AllowOutOfOrderMetadataProperties = true,
                     Converters = {
                         new JsonStringEnumConverter(),
                         new DictionaryTKeyObjectTValueConverter()
@@ -162,6 +178,9 @@ public class CodeGen {
         using (var w = new StreamWriter(Path.Join(utilsPath, "Util.cs"))) {
             w.WriteLine(s_util);
         }
+        using (var w = new StreamWriter(Path.Join(utilsPath, "IDataAccess.cs"))) {
+            w.WriteLine(s_DataAccess);
+        }
     }
 
     protected void GenRec(Module mod, string folder) {
@@ -188,9 +207,8 @@ public class CodeGen {
                 if (i is Table t) {
                     var typeCode = TypeToCode(rootNmspace, t.RootType.FullName);
                     s_tableLoadCode_m.AppendLine($$"""
-                                using (var r = File.OpenRead(Path.Join(folder, "{{name}}.json"))) {
-                                    tables.{{name}} = JsonSerializer.Deserialize<{{typeCode}}>(r, {{rootNmspace}}{{StringUtil.CodeUtilsModuleAbsPath}}.Util.Options);
-                                }
+                                var s = access.GetString(access.JoinPath(folder, "{{name}}.json"));
+                                    tables.{{name}} = JsonSerializer.Deserialize<{{typeCode}}>(s, {{rootNmspace}}{{StringUtil.CodeUtilsModuleAbsPath}}.Util.Options);
                         """);
 
                     s_fields_m.AppendLine($$"""
@@ -199,7 +217,7 @@ public class CodeGen {
                 } else if (i is Module m) {
                     var chTables = StringUtil.JoinItem(NameToCode(rootNmspace, m.FullName), tablesName);
                     s_nmspaceLoadCode_m.AppendLine($$"""
-                                tables.{{name}} = {{chTables}}.load(Path.Join(folder, "{{name}}"));
+                                tables.{{name}} = {{chTables}}.load(access, access.JoinPath(folder, "{{name}}"));
                         """);
 
                     s_fields_m.AppendLine($$"""
@@ -286,6 +304,7 @@ public class CodeGen {
                 f.Write($$"""
                     using System.Text.Json;
                     using System.Text.Encodings.Web;
+                    using System.Collections.Generic;
                     using {{rootNmspace}}{{StringUtil.CodeUtilsModuleAbsPath}};
 
 
@@ -295,7 +314,7 @@ public class CodeGen {
 
                     {{s_fields_m}}
 
-                        public static {{tablesName}} load(string folder) {
+                        public static {{tablesName}} load(IDataAccess access,IDataPath folder) {
                             var tables = new {{tablesName}}();
 
                             // 命名空间的读取
