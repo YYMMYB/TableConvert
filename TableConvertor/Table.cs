@@ -50,17 +50,26 @@ public class Table : Module {
                 }
             }
         }
-        table.ParseRange(0);
         return table;
     }
 
+    public void AfterCreate() {
+        if (tableArr[0, 0] == StringUtil.TransposeMark) {
+            var t2 = new string[tableArr.GetLength(1), tableArr.GetLength(0)];
+            for (int i = 0; i < tableArr.GetLength(0); i++)
+                for (int j = 0; j < tableArr.GetLength(1); j++) {
+                    t2[j, i] = tableArr[i, j];
+                }
+            tableArr = t2;
+        }
+    }
     public void ParseRange(int col) {
         string[] defaultOrder = [StringUtil.TableHeadPartName, StringUtil.TableValuePartName];
         bool canDefault = true;
         int defaultIndex = 0;
         for (int i = 0; i < tableArr.GetLength(0); i++) {
             var s = tableArr[i, col].Trim();
-            if (StringUtil.IsEmptyString(s)) {
+            if (s!=StringUtil.KeywordPrefix && !defaultOrder.Contains(s)) {
                 continue;
             }
 
@@ -78,8 +87,6 @@ public class Table : Module {
                 valueRange[0] = i;
                 valueRange[1] = tableArr.GetLength(0);
                 break;
-            } else {
-                throw new Exception();
             }
         }
     }

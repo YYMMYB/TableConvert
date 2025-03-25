@@ -15,6 +15,9 @@ public class Project {
             } else if (File.Exists(p)) {
                 if (Path.GetExtension(p) == ".csv") {
                     var table = Table.CreateByCsv(p);
+                    table.AfterCreate();
+                    table.ParseRange(0);
+
                     parent.AddItem(table);
                     table.LoadRawHead();
                     table.LoadHead();

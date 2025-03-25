@@ -234,5 +234,7 @@ public static class StringUtil {
         }
         return string.Join(DiscriminatorConnector, ls);
     }
+
+    public static string TransposeMark = "T";
 }
 
