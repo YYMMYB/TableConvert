@@ -49,13 +49,14 @@ TableConvertor.exe的路径 csv的文件夹路径 代码和json的父文件夹�
 "%~dp0/TableConvertor/TableConvertor.exe" "%~dp0/../data/tables" "%~dp0/../balatroxx/gen/cfg"
 ```
 (注:里面`%~dp0`是 .bat 文件所在的目录)
-../data/tables 是我csv的路径
-../balatroxx/ 是我的godot工程
-../balatroxx/gen/cfg 是生成的 代码和json
+
+- ../data/tables 是我csv的路径
+- ../balatroxx/ 是我的godot工程
+- ../balatroxx/gen/cfg 是生成的 代码和json
 
 最终会生成2个文件夹:
-../balatroxx/gen/cfg/code
-../balatroxx/gen/cfg/data
+- ../balatroxx/gen/cfg/code
+- ../balatroxx/gen/cfg/data
 
 把下面的代码复制到一个文件里.
 其他的地方用 `Cfg.Tables` 访问生成的表.
