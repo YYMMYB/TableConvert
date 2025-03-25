@@ -37,3 +37,77 @@
 emmm 有点懒得写, 有空再写.
 看看 testProj 里的 "综合.csv" 吧, 不会的直接提issue问吧.
 
+# Godot 使用指南
+
+终端调用:
+```
+TableConvertor.exe的路径 csv的文件夹路径 代码和json的父文件夹路径
+```
+
+比如我自己在用的bat脚本:
+```
+"%~dp0/TableConvertor/TableConvertor.exe" "%~dp0/../data/tables" "%~dp0/../balatroxx/gen/cfg"
+```
+(注:里面`%~dp0`是 .bat 文件所在的目录)
+../data/tables 是我csv的路径
+../balatroxx/ 是我的godot工程
+../balatroxx/gen/cfg 是生成的 代码和json
+
+最终会生成2个文件夹:
+../balatroxx/gen/cfg/code
+../balatroxx/gen/cfg/data
+
+把下面的代码复制到一个文件里.
+其他的地方用 `Cfg.Tables` 访问生成的表.
+
+```cs
+using Godot;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using FileAccess = Godot.FileAccess;
+
+public class Cfg {
+    public static Cfg I;
+    public static cfg.Tables Tables => I.tb;
+
+    static Cfg() {
+        I = new Cfg();
+        var access = new DataAccess();
+        // 这里的路径换成你的路径
+        var path = new DataPath("res://gen/cfg/data");
+        I.tb = cfg.Tables.load(access, path);
+    }
+
+    public cfg.Tables tb;
+}
+
+public class DataAccess : IDataAccess {
+    public System.IO.Stream GetString(IDataPath path) {
+        var p = (DataPath)path;
+        GD.Print(p.path);
+        var f = FileAccess.Open(p.path, FileAccess.ModeFlags.Read);
+        var s = f.GetAsText();
+        byte[] byteArray = Encoding.UTF8.GetBytes(s);
+        MemoryStream stream = new MemoryStream(byteArray);
+        return stream;
+    }
+
+    public IDataPath JoinPath(IDataPath path, string item) {
+        return (path as DataPath).Join(item);
+    }
+}
+
+public record class DataPath : IDataPath {
+    public string path;
+
+    public DataPath(string p) { path = p; }
+
+    public DataPath Join(string s) {
+        var npath = Path.Join(path, s);
+        return new DataPath(npath);
+    }
+}
+```
+

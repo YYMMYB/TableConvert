@@ -19,6 +19,7 @@ public class Table : Module {
     public Format format;
     public RawValue rawValue;
 
+
     public Type RootType { get => Global.I.GetAbsItem<Type>(head.fullTypeName); }
 
     public static Table CreateByCsv(string path) {
