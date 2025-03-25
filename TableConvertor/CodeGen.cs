@@ -258,7 +258,8 @@ public class CodeGen {
                     using (var f = new StreamWriter(path)) {
                         var s = $$"""
                             using System.Text.Json.Serialization;
-
+                            using System.Collections.Generic;
+                            
                             namespace {{rootNmspace}}{{nmspace}};
 
                             {{s_baseTypeAttr}}

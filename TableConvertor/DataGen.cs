@@ -17,7 +17,6 @@ public class DataGen {
 
     public void Gen(Module mod, string folder) {
         foreach (var (name, i) in mod.items) {
-            Console.WriteLine(name, i);
             if (i is Table t) { // Table 继承了 Module 所以必须先判断Table 
                 Directory.CreateDirectory(folder);
                 var path = Path.Join(folder, $"{name}.json");

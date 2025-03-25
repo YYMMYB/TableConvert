@@ -8,18 +8,18 @@ string outPath;
 string dataPath;
 string codePath;
 
-string root;
+string projPath;
 
 
 
 if (args.Length == 1) {
-    root = args[0];
+    projPath = args[0];
     outPath = Path.Join(Environment.CurrentDirectory, "out");
 } else if (args.Length == 2) {
-    root = args[0];
+    projPath = args[0];
     outPath = args[1];
 } else {
-    root = @"D:\Project\TableConvertor\Test\testProj\";
+    projPath = @"D:\Project\gd_balatroxx3\data\tables";
     outPath = @"D:\Project\TableConvertor\GenTest\";
 }
 
@@ -32,7 +32,7 @@ if (Directory.Exists(codePath))
     Directory.Delete(codePath, true);
 
 var proj = new Project();
-proj.Load(Global.I.root, root);
+proj.Load(Global.I.root, projPath);
 var dg = new DataGen(Global.I.root, dataPath);
 dg.Gen(dg.rootMod, dg.rootFolder);
 var cg = new CodeGen(Global.I.root, codePath);

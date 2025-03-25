@@ -41,9 +41,7 @@ public class Table : Module {
                     list[i] = csv.GetField(i);
                 }
                 tableList.Add(list);
-                //Console.WriteLine($"{suc}");
             }
-            //Console.WriteLine(colCount);
             table.tableArr = new string[tableList.Count, colCount];
             for (int i = 0; i < tableList.Count; i++) {
                 for (int j = 0; j < colCount; j++) {
