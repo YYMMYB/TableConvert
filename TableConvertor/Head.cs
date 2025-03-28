@@ -17,8 +17,15 @@ public class Head {
     public int[] rowRange;
 
     public string name;
-    public string autoName;
+    // 类型名 用户可能输入 在 Create 里可能直接赋值
+    // 但是用户可能输入的是带命名空间的, 
+    // 在 CreateType 的 CalcFullTypeName 中会去掉命名空间, 只留下名字部分.
     public string? typeName;
+    // 用_链接的字段名路径, 用于生成类型名, 在用户没输入类型名的时候.
+    // 目前是在 CreateType 的 CalcFullTypeName 中产生(因为目前只有类型名用到了这个)
+    // 但是似乎可以更早产生.
+    public string autoName;
+    // 带命名空间的类型路径 在 CreateType 里调用 CalcFullTypeName 产生.
     public string? fullTypeName;
 
     public Dictionary<string, List<string>> attrs = new();
@@ -28,7 +35,13 @@ public class Head {
 
         if (raw.isVertical) {
             var head1 = new ObjectHead();
-            head1.type = (parent as ObjectHead).type;
+            var baseO = (parent as ObjectHead);
+            head1.type = baseO.type;
+            if (baseO.baseHead == null) {
+                head1.baseHead = baseO;
+            } else {
+                head1.baseHead = baseO.baseHead;
+            }
             head = head1;
             var s = StringUtil.TryVarient(raw.content);
             var s2 = StringUtil.SplitWhite(s!);
@@ -399,6 +412,29 @@ public class ObjectHead : Head {
             throw new Exception();
         }
     }
+
+    // 复制自父类的函数
+    public override void CalcFullTypeName(string? mid) {
+        CalcAutoName(mid);
+        if (typeName != null && StringUtil.IsAbsItem(typeName)) {
+            fullTypeName = typeName;
+            typeName = StringUtil.ItemName(fullTypeName);
+        } else {
+            var tn = typeName;
+            if (tn == null) {
+                tn = autoName;
+            }
+            typeName = tn;
+
+            // 这里是修改的部分
+            if (baseHead != null) {
+                var typeMod = StringUtil.ParentItem(baseHead.fullTypeName);
+                fullTypeName = StringUtil.JoinItem(typeMod, typeName);
+            } else {
+                fullTypeName = mod.CulcFullName(tn);
+            }
+        }
+    }
 }
 
 public class SingleHead : Head {
@@ -461,7 +497,7 @@ public class RefHead : Head {
     public string[] r;
 
     public Head Target(Head root) {
-        while(root is ListHead lh) {
+        while (root is ListHead lh) {
             root = lh.valueHead;
         }
         foreach (var n in r) {

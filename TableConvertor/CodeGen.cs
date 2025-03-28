@@ -263,7 +263,7 @@ public class CodeGen {
                             namespace {{rootNmspace}}{{nmspace}};
 
                             {{s_baseTypeAttr}}
-                            public class {{s_name}} {{s_baseType}} {
+                            public partial class {{s_name}} {{s_baseType}} {
 
                             {{s_fields}}
 
