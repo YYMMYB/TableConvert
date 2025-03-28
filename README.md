@@ -85,14 +85,11 @@ public class Cfg {
 }
 
 public class DataAccess : IDataAccess {
-    public System.IO.Stream GetString(IDataPath path) {
+    public string GetString(IDataPath path) {
         var p = (DataPath)path;
-        GD.Print(p.path);
         var f = FileAccess.Open(p.path, FileAccess.ModeFlags.Read);
         var s = f.GetAsText();
-        byte[] byteArray = Encoding.UTF8.GetBytes(s);
-        MemoryStream stream = new MemoryStream(byteArray);
-        return stream;
+        return s;
     }
 
     public IDataPath JoinPath(IDataPath path, string item) {

@@ -31,7 +31,7 @@ public class CodeGen {
             using System.IO;
             
             public interface IDataAccess {
-                Stream GetString(IDataPath path);
+                string GetString(IDataPath path);
                 IDataPath JoinPath(IDataPath path, string item);
             }
 
@@ -184,6 +184,9 @@ public class CodeGen {
     }
 
     protected void GenRec(Module mod, string folder) {
+        if (mod.IsEngineModule) {
+            return;
+        }
         if (mod.FullName == StringUtil.CodeUtilsModuleAbsPath) {
             throw new Exception();
         }
@@ -197,37 +200,6 @@ public class CodeGen {
         var s_nmspaceLoadCode_m = new StringBuilder();
 
         foreach (var (name, i) in mod.items) {
-            {
-                if (i is Module m && m.IsEngineModule) {
-                    continue;
-                }
-            }
-
-            if (!(mod is Table)) {
-                if (i is Table t) {
-                    var typeCode = TypeToCode(rootNmspace, t.RootType.FullName);
-                    s_tableLoadCode_m.AppendLine($$"""
-                                {
-                                var s = access.GetString(access.JoinPath(folder, "{{name}}.json"));
-                                tables.{{name}} = JsonSerializer.Deserialize<{{typeCode}}>(s, {{rootNmspace}}{{StringUtil.CodeUtilsModuleAbsPath}}.Util.Options);
-                                }
-                        """);
-
-                    s_fields_m.AppendLine($$"""
-                            public {{typeCode}} {{name}};
-                        """);
-                } else if (i is Module m) {
-                    var chTables = StringUtil.JoinItem(NameToCode(rootNmspace, m.FullName), tablesName);
-                    s_nmspaceLoadCode_m.AppendLine($$"""
-                                tables.{{name}} = {{chTables}}.load(access, access.JoinPath(folder, "{{name}}"));
-                        """);
-
-                    s_fields_m.AppendLine($$"""
-                            public {{chTables}} {{name}};
-                        """);
-                }
-            }
-
             var nmspace = i.ParentMod.FullName;
 
             if (i is Type ty) {
@@ -299,10 +271,39 @@ public class CodeGen {
 
                 var path = Path.Join(folder, name);
                 GenRec(m, path);
+                if (m.existTable || i is Table) {
+                    mod.existTable = true;
+                }
             }
+
         }
 
-        if (!(mod is Table)) {
+        if (!(mod is Table) && mod.existTable) {
+
+            foreach (var (name, i) in mod.items) {
+                if (i is Table t) {
+                    var typeCode = TypeToCode(rootNmspace, t.RootType.FullName);
+                    s_tableLoadCode_m.AppendLine($$"""
+                                {
+                                var s = access.GetString(access.JoinPath(folder, "{{name}}.json"));
+                                tables.{{name}} = JsonSerializer.Deserialize<{{typeCode}}>(s, {{rootNmspace}}{{StringUtil.CodeUtilsModuleAbsPath}}.Util.Options);
+                                }
+                        """);
+
+                    s_fields_m.AppendLine($$"""
+                            public {{typeCode}} {{name}};
+                        """);
+                } else if (i is Module m && m.existTable) {
+                    var chTables = StringUtil.JoinItem(NameToCode(rootNmspace, m.FullName), tablesName);
+                    s_nmspaceLoadCode_m.AppendLine($$"""
+                                tables.{{name}} = {{chTables}}.load(access, access.JoinPath(folder, "{{name}}"));
+                        """);
+
+                    s_fields_m.AppendLine($$"""
+                            public {{chTables}} {{name}};
+                        """);
+                }
+            }
 
             var tablePath = Path.Join(folder, tablesName + ".cs");
             using (var f = new StreamWriter(tablePath)) {

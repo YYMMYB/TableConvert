@@ -202,7 +202,9 @@ public class Head {
             if (tn == null) {
                 tn = autoName;
             }
-            typeName = tn;
+            var tnRoot = StringUtil.ParentItem(tn);
+            var tnName = StringUtil.ItemName(tn);
+            typeName = tnName;
             fullTypeName = mod.CulcFullName(tn);
         }
     }
@@ -424,12 +426,14 @@ public class ObjectHead : Head {
             if (tn == null) {
                 tn = autoName;
             }
-            typeName = tn;
+            var tnRoot = StringUtil.ParentItem(tn);
+            var tnName = StringUtil.ItemName(tn);
+            typeName = tnName;
 
             // 这里是修改的部分
             if (baseHead != null) {
-                var typeMod = StringUtil.ParentItem(baseHead.fullTypeName);
-                fullTypeName = StringUtil.JoinItem(typeMod, typeName);
+                var typeMod = StringUtil.ParentItem(parent.fullTypeName);
+                fullTypeName = StringUtil.JoinItem(typeMod, tnRoot, typeName);
             } else {
                 fullTypeName = mod.CulcFullName(tn);
             }

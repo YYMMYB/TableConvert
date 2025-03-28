@@ -9,6 +9,8 @@ public class Module : Item {
 
     public Module(string name) : base(name) { }
 
+    public bool existTable = false;
+
     public Dictionary<string, Item> items = new();
 
     public bool IsEngineModule => FullName == StringUtil.EngineModuleAbsPath;

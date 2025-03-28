@@ -133,7 +133,12 @@ public static class StringUtil {
 
 
     public static string JoinItem(params string[] comp) {
-        return string.Join(ItemSplitor, comp);
+        var l = new List<string>();
+        foreach (var c in comp) {
+            if (c != null)
+                l.Add(c);
+        }
+        return string.Join(ItemSplitor, l);
     }
     public static string[] SplitItem(string s) {
         return s.Split(ItemSplitor);
@@ -151,7 +156,11 @@ public static class StringUtil {
         return path.Substring(path.LastIndexOf(ItemSplitor) + 1);
     }
     public static string ParentItem(string path) {
-        return path.Substring(0, path.LastIndexOf(ItemSplitor));
+        var idx = path.LastIndexOf(ItemSplitor);
+        if (idx == -1)
+            return null;
+        else
+            return path.Substring(0, idx);
     }
 
     public static string JoinIdent(params string[] comp) {
